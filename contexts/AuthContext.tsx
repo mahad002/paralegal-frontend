@@ -63,9 +63,9 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
         setIsLoading(true);
         console.log("Fetching current user from API...");
         
-        const user = await api.getCurrentUser(token);
+        const user = await api.getCurrentUser(token); 
         console.log("User fetched from API:", user);
-
+  
         if (user && user._id) {
           console.log("Valid user data received. Updating state...");
           setUser(user);
@@ -90,9 +90,10 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
       console.log("No token found in localStorage. User is not authenticated.");
       setUser(null);
     }
-
+  
     console.log("checkAuth complete.");
   }, []);
+  
 
   return (
     <AuthContext.Provider value={{ user, login, logout, isLoading, checkAuth }}>

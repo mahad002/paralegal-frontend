@@ -1,40 +1,51 @@
-'use client'
+'use client';
 
-import { useState } from 'react'
-import { useRouter } from 'next/navigation'
-import Link from 'next/link'
-import { api } from '@/lib/api'
-import { Button } from '@/components/ui/button'
-import { Input } from '@/components/ui/input'
-import { Label } from '@/components/ui/label'
-import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select'
-import { useToast } from '@/components/ui/use-toast'
+import { useState } from 'react';
+import { useRouter } from 'next/navigation';
+import Link from 'next/link';
+import { api } from '@/lib/api';
+import { Button } from '@/components/ui/button';
+import { Input } from '@/components/ui/input';
+import { Label } from '@/components/ui/label';
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
+import { useToast } from '@/components/ui/use-toast';
+
+// Define the allowed role types
+type Role = 'admin' | 'legal_researcher' | 'lawyer' | 'judge' | 'legal_professional';
 
 export default function Signup() {
-  const [name, setName] = useState('')
-  const [email, setEmail] = useState('')
-  const [password, setPassword] = useState('')
-  const [role, setRole] = useState('')
-  const router = useRouter()
-  const { toast } = useToast()
+  const [name, setName] = useState('');
+  const [email, setEmail] = useState('');
+  const [password, setPassword] = useState('');
+  const [role, setRole] = useState<Role | null>(null); // Ensure type safety
+  const router = useRouter();
+  const { toast } = useToast();
 
   const handleSubmit = async (e: React.FormEvent) => {
-    e.preventDefault()
+    e.preventDefault();
+    if (!role) {
+      toast({
+        title: 'Error',
+        description: 'Please select a role.',
+        variant: 'destructive',
+      });
+      return;
+    }
     try {
-      await api.signup(name, email, password, role)
+      await api.signup(name, email, password, role);
       toast({
         title: 'Signup successful',
         description: 'Please log in with your new account.',
-      })
-      router.push('/login')
+      });
+      router.push('/login');
     } catch (error) {
       toast({
         title: 'Signup failed',
         description: error instanceof Error ? error.message : 'An error occurred during signup.',
         variant: 'destructive',
-      })
+      });
     }
-  }
+  };
 
   return (
     <div className="flex h-screen items-center justify-center">
@@ -72,14 +83,16 @@ export default function Signup() {
         </div>
         <div>
           <Label htmlFor="role">Role</Label>
-          <Select onValueChange={setRole} required>
+          <Select onValueChange={(value) => setRole(value as Role)} required>
             <SelectTrigger>
               <SelectValue placeholder="Select a role" />
             </SelectTrigger>
             <SelectContent>
-              <SelectItem value="paralegal">Paralegal</SelectItem>
-              <SelectItem value="lawyer">Lawyer</SelectItem>
               <SelectItem value="admin">Admin</SelectItem>
+              <SelectItem value="legal_researcher">Legal Researcher</SelectItem>
+              <SelectItem value="lawyer">Lawyer</SelectItem>
+              <SelectItem value="judge">Judge</SelectItem>
+              <SelectItem value="legal_professional">Legal Professional</SelectItem>
             </SelectContent>
           </Select>
         </div>
@@ -92,6 +105,5 @@ export default function Signup() {
         </div>
       </form>
     </div>
-  )
+  );
 }
-

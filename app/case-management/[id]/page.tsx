@@ -1,7 +1,7 @@
 'use client';
 
 import { useEffect, useState } from 'react';
-import { useRouter } from 'next/navigation';
+import { useParams } from 'next/navigation';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Input } from '@/components/ui/input';
@@ -10,61 +10,72 @@ import { Textarea } from '@/components/ui/textarea';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { useToast } from '@/components/ui/use-toast';
 import { api } from '@/lib/api';
-import { useAuth } from '@/contexts/AuthContext';
 import type { Case } from '@/types';
 
-export default function CaseDetailPage({ params }: { params: { id: string } }) {
-  const router = useRouter();
-  const { toast } = useToast();
-  const { user } = useAuth();
+export default function CaseDetailPage() {
+  const { id } = useParams();
   const [caseData, setCaseData] = useState<Case | null>(null);
   const [isLoading, setIsLoading] = useState(true);
   const [isEditing, setIsEditing] = useState(false);
   const [editedData, setEditedData] = useState<Partial<Case>>({});
   const [isSaving, setIsSaving] = useState(false);
-  const [isDeletePopupOpen, setIsDeletePopupOpen] = useState(false); // New state
+  const [isDeletePopupOpen, setIsDeletePopupOpen] = useState(false);
+  const { toast } = useToast();
 
   useEffect(() => {
     const fetchCase = async () => {
+      let data;
       try {
-        const data = await api.getCase(params.id);
+        if (typeof id === 'string') {
+          const data1 = await api.getCase(id);
+          data = data1;
+        } else {
+          throw new Error('Invalid case ID');
+        }
+
         setCaseData(data);
         setEditedData(data);
       } catch (error) {
         console.error('Error fetching case:', error);
-        toast({ title: "Error fetching case", description: "Could not load case details.", variant: "destructive" });
+        toast({ title: 'Error fetching case', description: 'Could not load case details.', variant: 'destructive' });
       } finally {
         setIsLoading(false);
       }
     };
 
-    if (user) {
-      fetchCase();
-    } else {
-      router.push('/login');
-    }
-  }, [params.id, user, toast, router]);
+    fetchCase();
+  }, [id, toast]);
 
   const handleChange = (e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement>) => {
     const { name, value } = e.target;
     setEditedData((prev) => ({ ...prev, [name]: value }));
   };
 
-  const handleStatusChange = (value: "Open" | "In Progress" | "Resolved" | "Closed") => {
+  const handleStatusChange = (value: 'Open' | 'In Progress' | 'Resolved' | 'Closed') => {
     setEditedData((prev) => ({ ...prev, status: value }));
   };
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     setIsSaving(true);
+
+    let updatedCase;
     try {
-      const updatedCase = await api.updateCase(params.id, editedData);
+      if (typeof id === 'string') {
+        const updatedCase1 = await api.updateCase(id, editedData);
+        updatedCase = updatedCase1;
+        setCaseData(updatedCase);
+        setIsEditing(false);
+        toast({ title: 'Case updated successfully' });
+      } else {
+        throw new Error('Invalid case ID');
+      }
       setCaseData(updatedCase);
       setIsEditing(false);
-      toast({ title: "Case updated successfully" });
+      toast({ title: 'Case updated successfully' });
     } catch (error) {
       console.error('Error updating case:', error);
-      toast({ title: "Error updating case", description: "Failed to update the case.", variant: "destructive" });
+      toast({ title: 'Error updating case', description: 'Failed to update the case.', variant: 'destructive' });
     } finally {
       setIsSaving(false);
     }
@@ -72,12 +83,16 @@ export default function CaseDetailPage({ params }: { params: { id: string } }) {
 
   const handleDeleteCase = async () => {
     try {
-      await api.deleteCase(params.id);
-      toast({ title: "Case deleted successfully" });
-      router.push('/case-management'); 
+      if (typeof id === 'string') {
+        await api.deleteCase(id);
+      } else {
+        throw new Error('Invalid case ID');
+      }
+      toast({ title: 'Case deleted successfully' });
+      window.location.href = '/case-management';
     } catch (error) {
       console.error('Error deleting case:', error);
-      toast({ title: "Error deleting case", description: "Failed to delete the case.", variant: "destructive" });
+      toast({ title: 'Error deleting case', description: 'Failed to delete the case.', variant: 'destructive' });
     }
   };
 

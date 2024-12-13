@@ -51,9 +51,15 @@ export const api = {
     });
   },
 
-  getCurrentUser: async (): Promise<User> => {
-    const data = await fetchAPI<{ user: User }>('/users/me', { method: 'GET' });
-    return data.user;
+  getCurrentUser: async (token: string): Promise<User> => {
+    try {
+      console.log('Token: ', token);
+      const data = await fetchAPI<{ user: User }>('/users/me', { method: 'GET' });
+      return data.user;
+    } catch (error) {
+      console.error('Failed to fetch the current user:', error);
+      throw error;
+    }
   },
 
   signup: async (name: string, email: string, password: string, role: User['role']): Promise<{ message: string }> => {

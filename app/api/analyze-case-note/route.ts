@@ -1,11 +1,9 @@
-import { NextResponse } from 'next/server'
+import { NextResponse } from 'next/server';
 
-export async function POST(req: Request) {
+export async function POST() {
   try {
-    const { text } = await req.json()
 
-    // Here you would typically send the text to your AI model or service for analysis
-    // For this example, we'll just return a dummy result
+    // Mock analysis result for case notes
     const analysisResult = {
       citations: ['Smith v. Jones (2021)', 'Doe v. Roe (2019)'],
       facts: ['The incident occurred on January 1, 2022', 'The defendant was present at the scene'],
@@ -17,12 +15,11 @@ export async function POST(req: Request) {
       precedents: ['R v. Smith [2018] UKSC 1', 'Brown v. Board of Education, 347 U.S. 483 (1954)'],
       ratio: ['The court held that the defendant\'s presence at the scene was sufficient to establish probable cause.'],
       rulings: ['The defendant is found guilty of second-degree murder'],
-    }
+    };
 
-    return NextResponse.json(analysisResult)
+    return NextResponse.json(analysisResult);
   } catch (error) {
-    console.error('Error analyzing case note:', error)
-    return NextResponse.json({ error: 'Failed to analyze case note' }, { status: 500 })
+    console.error('Error analyzing case note:', error);
+    return NextResponse.json({ error: 'Failed to analyze case note' }, { status: 500 });
   }
 }
-

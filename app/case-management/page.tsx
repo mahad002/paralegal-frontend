@@ -1,55 +1,55 @@
-'use client'
+'use client';
 
-import { useEffect, useState } from 'react'
-import Link from 'next/link'
-import { useRouter } from 'next/navigation'
-import { PlusCircle } from 'lucide-react'
-import { Button } from '@/components/ui/button'
-import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card'
-import { Table, TableBody, TableHead, TableCell, TableHeader, TableRow } from '@/components/ui/table'
-import { useToast } from '@/components/ui/use-toast'
-import { api } from '@/lib/api'
-import type { Case } from '@/types'
-import { useAuth } from '@/contexts/AuthContext'
+import { useEffect, useState } from 'react';
+import Link from 'next/link';
+import { useRouter } from 'next/navigation';
+import { PlusCircle } from 'lucide-react';
+import { Button } from '@/components/ui/button';
+import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
+import { Table, TableBody, TableHead, TableCell, TableHeader, TableRow } from '@/components/ui/table';
+import { useToast } from '@/components/ui/use-toast';
+import { api } from '@/lib/api';
+import type { Case } from '@/types';
+import { useAuth } from '@/contexts/AuthContext';
 
 export default function CaseManagementPage() {
-  const [cases, setCases] = useState<Case[]>([])
-  const [isLoading, setIsLoading] = useState(true)
-  const router = useRouter()
-  const { toast } = useToast()
-  const { user, isLoading: authLoading } = useAuth()
+  const [cases, setCases] = useState<Case[]>([]);
+  const [isLoading, setIsLoading] = useState(true);
+  const router = useRouter();
+  const { toast } = useToast();
+  const { user, isLoading: authLoading } = useAuth();
 
   useEffect(() => {
     const fetchCases = async () => {
-      if (!user) return
+      if (!user) return;
 
       try {
-        const fetchedCases = await api.getCases(user._id)
-        setCases(fetchedCases)
+        const fetchedCases = await api.getCases(user._id);
+        setCases(fetchedCases);
       } catch (error) {
-        console.error('Error fetching cases:', error)
+        console.error('Error fetching cases:', error);
         toast({
           title: 'Error fetching cases',
           description: 'Failed to load cases. Please try again later.',
           variant: 'destructive',
-        })
+        });
       } finally {
-        setIsLoading(false)
+        setIsLoading(false);
       }
-    }
+    };
 
     if (!authLoading && user) {
-      fetchCases()
+      fetchCases();
     } else if (!authLoading && !user) {
-      router.push('/login')
+      router.push('/login');
     }
-  }, [authLoading, user, toast, router])
+  }, [authLoading, user, toast, router]);
 
   if (isLoading || authLoading) {
-    return <div className="flex justify-center items-center h-screen">Loading...</div>
+    return <div className="flex justify-center items-center h-screen">Loading...</div>;
   }
 
-  if (!user) return null
+  if (!user) return null;
 
   return (
     <div className="container mx-auto py-6 md:py-10">
@@ -109,6 +109,5 @@ export default function CaseManagementPage() {
         </CardContent>
       </Card>
     </div>
-  )
+  );
 }
-
