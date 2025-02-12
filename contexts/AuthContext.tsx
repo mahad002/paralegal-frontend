@@ -1,6 +1,7 @@
 'use client'
 
-import React, { createContext, useState, useContext, useCallback } from 'react';
+import React, { createContext, useState, useContext, useCallback, useEffect } from 'react';
+import { useRouter } from 'next/navigation';
 import { api } from '@/lib/api';
 import type { User } from '@/types';
 
@@ -10,30 +11,38 @@ interface AuthContextType {
   logout: () => void;
   isLoading: boolean;
   checkAuth: () => Promise<void>;
+  isAuthenticated: boolean;
+  hasRole: (roles: User['role'] | User['role'][]) => boolean;
 }
 
 const AuthContext = createContext<AuthContextType | undefined>(undefined);
 
 export function AuthProvider({ children }: { children: React.ReactNode }) {
   const [user, setUser] = useState<User | null>(null);
-  const [isLoading, setIsLoading] = useState(false);
+  const [isLoading, setIsLoading] = useState(true);
+  const router = useRouter();
 
   const login = async (email: string, password: string) => {
     setIsLoading(true);
     try {
-      console.log('Attempting login...');
       const { token, user } = await api.login(email, password);
-      console.log('Storing token in localStorage:', token ? 'exists' : 'missing');
+      
+      if (!token || !user) {
+        throw new Error('Invalid response from server');
+      }
+
       if (typeof window !== 'undefined') {
         localStorage.setItem('token', token);
-        console.log('Token successfully stored in localStorage');
-      } else {
-        console.warn('Window is undefined, skipping localStorage operation');
       }
+      
       setUser(user);
-      await checkAuth();
+      await checkAuth(); // Verify the token and user data
     } catch (error) {
       console.error('Login error:', error);
+      setUser(null);
+      if (typeof window !== 'undefined') {
+        localStorage.removeItem('token');
+      }
       throw error;
     } finally {
       setIsLoading(false);
@@ -41,62 +50,71 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
   };
 
   const logout = useCallback(() => {
-    console.log('Logging out...');
     if (typeof window !== 'undefined') {
       localStorage.removeItem('token');
-      console.log('Token removed from localStorage');
-    } else {
-      console.warn('Window is undefined, skipping localStorage operation');
     }
     setUser(null);
-    console.log('User state cleared');
-  }, []);
+    router.push('/login');
+  }, [router]);
 
   const checkAuth = useCallback(async () => {
-    console.log("Starting checkAuth...");
-    
     const token = typeof window !== 'undefined' ? localStorage.getItem('token') : null;
-    console.log("Token in localStorage:", token ? 'exists' : 'missing');
     
-    if (token) {
-      try {
-        setIsLoading(true);
-        console.log("Fetching current user from API...");
-        
-        const user = await api.getCurrentUser(token); 
-        console.log("User fetched from API:", user);
-  
-        if (user && user._id) {
-          console.log("Valid user data received. Updating state...");
-          setUser(user);
-        } else {
-          console.error("Invalid user data received from API:", user);
-          setUser(null);
-          if (typeof window !== 'undefined') {
-            localStorage.removeItem('token');
-          }
-        }
-      } catch (error) {
-        console.error("Error occurred while fetching user from API:", error);
-        setUser(null);
-        if (typeof window !== 'undefined') {
-          localStorage.removeItem('token');
-        }
-      } finally {
-        console.log("Setting isLoading to false...");
-        setIsLoading(false);
-      }
-    } else {
-      console.log("No token found in localStorage. User is not authenticated.");
+    if (!token) {
+      setIsLoading(false);
       setUser(null);
+      return;
     }
-  
-    console.log("checkAuth complete.");
-  }, []);
-  
+
+    try {
+      setIsLoading(true);
+      const user = await api.getCurrentUser();
+      
+      if (user && user._id) {
+        setUser(user);
+      } else {
+        throw new Error('Invalid user data');
+      }
+    } catch (error) {
+      console.error('Auth check error:', error);
+      setUser(null);
+      if (typeof window !== 'undefined') {
+        localStorage.removeItem('token');
+      }
+      router.push('/login');
+    } finally {
+      setIsLoading(false);
+    }
+  }, [router]);
+
+  // Check authentication status on mount and token changes
+  useEffect(() => {
+    checkAuth();
+  }, [checkAuth]);
+
+  // Function to check if user has specific role(s)
+  const hasRole = useCallback((roles: User['role'] | User['role'][]) => {
+    if (!user) return false;
+    
+    if (Array.isArray(roles)) {
+      return roles.includes(user.role);
+    }
+    
+    return user.role === roles;
+  }, [user]);
+
+  const value = {
+    user,
+    login,
+    logout,
+    isLoading,
+    checkAuth,
+    isAuthenticated: !!user,
+    hasRole,
+  };
 
   return (
-    <AuthContext.Provider value={{ user, login, logout, isLoading, checkAuth }}>
+    <AuthContext.Provider value={value}>
       {children}
     </AuthContext.Provider>
   );
@@ -109,4 +127,3 @@ export function useAuth() {
   }
   return context;
 }
-

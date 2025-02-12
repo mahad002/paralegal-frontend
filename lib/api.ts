@@ -1,6 +1,4 @@
 const API_URL = process.env.API_URL || 'https://paralegal-backend.onrender.com';
-// const API_URL = "http://localhost:5001"; // for testing
-console.log(API_URL);
 
 import type {
   User,
@@ -11,9 +9,6 @@ import type {
   LoginResponse,
 } from '@/types';
 
-/**
- * Utility function to make API requests with consistent headers and error handling.
- */
 async function fetchAPI<T>(endpoint: string, options: RequestInit = {}): Promise<T> {
   const token = localStorage.getItem('token');
   const headers = {
@@ -43,7 +38,7 @@ async function fetchAPI<T>(endpoint: string, options: RequestInit = {}): Promise
 }
 
 export const api = {
-  // User Routes
+  // Authentication Routes
   login: async (email: string, password: string): Promise<LoginResponse> => {
     return fetchAPI<LoginResponse>('/users/login', {
       method: 'POST',
@@ -51,9 +46,8 @@ export const api = {
     });
   },
 
-  getCurrentUser: async (token: string): Promise<User> => {
+  getCurrentUser: async (): Promise<User> => {
     try {
-      console.log('Token: ', token);
       const data = await fetchAPI<{ user: User }>('/users/me', { method: 'GET' });
       return data.user;
     } catch (error) {
@@ -69,6 +63,7 @@ export const api = {
     });
   },
 
+  // Password Management Routes
   forgotPassword: async (email: string): Promise<{ resetToken: string; message: string }> => {
     return fetchAPI('/users/forgot-password', {
       method: 'POST',
@@ -83,6 +78,7 @@ export const api = {
     });
   },
 
+  // Admin User Management Routes
   getAllUsers: async (): Promise<User[]> => {
     return fetchAPI('/users', { method: 'GET' });
   },
@@ -102,7 +98,51 @@ export const api = {
     return fetchAPI(`/users/${id}`, { method: 'DELETE' });
   },
 
-  // Case Routes
+  // Firm Management Routes
+  getFirmLawyers: async (): Promise<User[]> => {
+    return fetchAPI('/users/lawyers', { method: 'GET' });
+  },
+
+  addLawyerToFirm: async (data: {
+    lawyerId?: string;
+    name?: string;
+    email?: string;
+    password?: string;
+  }): Promise<{ message: string }> => {
+    return fetchAPI('/users/lawyers', {
+      method: 'POST',
+      body: JSON.stringify(data),
+    });
+  },
+
+  removeLawyerFromFirm: async (lawyerId: string): Promise<{ message: string }> => {
+    return fetchAPI(`/users/lawyers/${lawyerId}`, { method: 'DELETE' });
+  },
+
+  getFirmCases: async (): Promise<Case[]> => {
+    return fetchAPI('/firm/cases', { method: 'GET' });
+  },
+
+  assignLawyerToCase: async (caseId: string, lawyerId: string): Promise<{ message: string }> => {
+    return fetchAPI(`/firm/cases/${caseId}/assign`, {
+      method: 'POST',
+      body: JSON.stringify({ lawyerId }),
+    });
+  },
+
+  // Lawyer Routes
+  getLawyerCases: async (): Promise<Case[]> => {
+    return fetchAPI('/lawyer/cases', { method: 'GET' });
+  },
+
+  updateLawyerProfile: async (profileData: Partial<User>): Promise<User> => {
+    return fetchAPI('/lawyer/profile', {
+      method: 'PUT',
+      body: JSON.stringify(profileData),
+    });
+  },
+
+  // Case Management Routes
   getCases: async (userId: string): Promise<Case[]> => {
     return fetchAPI(`/cases/user/${userId}`, { method: 'GET' });
   },
@@ -192,13 +232,48 @@ export const api = {
   },
 
   getChatHistoryForComplianceBot: async (): Promise<ChatHistory[]> => {
-    return fetchAPI(`/chat-history/compliance`, { method: 'GET' });
+    return fetchAPI('/chat-history/compliance', { method: 'GET' });
   },
 
   addChatHistoryForComplianceBot: async (chatData: Partial<ChatHistory>): Promise<ChatHistory> => {
-    return fetchAPI(`/chat-history/compliance`, {
+    return fetchAPI('/chat-history/compliance', {
       method: 'POST',
       body: JSON.stringify(chatData),
     });
+  },
+
+  // Analytics Routes
+  getCaseAnalytics: async (): Promise<{
+    totalCases: number;
+    activeCases: number;
+    resolvedCases: number;
+    averageResolutionTime: number;
+  }> => {
+    return fetchAPI('/analytics/cases', { method: 'GET' });
+  },
+
+  getLawyerAnalytics: async (): Promise<{
+    totalLawyers: number;
+    activeLawyers: number;
+    averageCaseLoad: number;
+  }> => {
+    return fetchAPI('/analytics/lawyers', { method: 'GET' });
+  },
+
+  // Document Management Routes
+  uploadDocument: async (caseId: string, formData: FormData): Promise<{ url: string }> => {
+    return fetchAPI(`/documents/${caseId}/upload`, {
+      method: 'POST',
+      body: formData,
+      headers: {}, // Let the browser set the correct Content-Type for FormData
+    });
+  },
+
+  getDocuments: async (caseId: string): Promise<Array<{ url: string; name: string; type: string }>> => {
+    return fetchAPI(`/documents/${caseId}`, { method: 'GET' });
+  },
+
+  deleteDocument: async (caseId: string, documentId: string): Promise<{ message: string }> => {
+    return fetchAPI(`/documents/${caseId}/${documentId}`, { method: 'DELETE' });
   },
 };

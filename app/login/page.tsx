@@ -13,7 +13,7 @@ import { useToast } from "@/components/ui/use-toast"
 export default function LoginPage() {
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
-  const { login, isLoading, checkAuth } = useAuth(); // Update 2: Added checkAuth
+  const { login, isLoading, checkAuth } = useAuth();
   const { toast } = useToast();
   const router = useRouter();
 
@@ -21,7 +21,7 @@ export default function LoginPage() {
     e.preventDefault();
     try {
       await login(email, password);
-      await checkAuth(); // Update 1: Added checkAuth call
+      await checkAuth();
       router.push('/');
     } catch (error) {
       console.error('Login error:', error);
@@ -79,4 +79,3 @@ export default function LoginPage() {
     </div>
   );
 }
-

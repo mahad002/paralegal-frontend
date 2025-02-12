@@ -1,86 +1,55 @@
 'use client';
 
 import { useEffect, useState } from 'react';
-import { useRouter } from 'next/navigation';
 import { useAuth } from '@/contexts/AuthContext';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '@/components/ui/card';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
-import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
 import { useToast } from '@/components/ui/use-toast';
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from '@/components/ui/dialog';
 import { api } from '@/lib/api';
 import type { User } from '@/types';
-import { Trash2, UserPlus, Shield } from 'lucide-react';
+import { Trash2, UserPlus, Users } from 'lucide-react';
 
-export default function UsersPage() {
-    const [users, setUsers] = useState<User[]>([]);
+export default function FirmLawyersPage() {
+    const [lawyers, setLawyers] = useState<User[]>([]);
     const [isLoading, setIsLoading] = useState(true);
-    const [isAddingUser, setIsAddingUser] = useState(false);
+    const [isAddingLawyer, setIsAddingLawyer] = useState(false);
     const [formData, setFormData] = useState({
         name: '',
         email: '',
         password: '',
-        role: '',
     });
-    
     const { user } = useAuth();
     const { toast } = useToast();
-    const router = useRouter();
 
-    // Verify admin role and fetch users
+    const fetchLawyers = async () => {
+        try {
+            const fetchedLawyers = await api.getFirmLawyers();
+            setLawyers(fetchedLawyers);
+        } catch (error) {
+            console.error('Error fetching lawyers:', error);
+            toast({
+                title: 'Error',
+                description: 'Failed to fetch lawyers',
+                variant: 'destructive',
+            });
+        } finally {
+            setIsLoading(false);
+        }
+    };
+
     useEffect(() => {
-        const verifyAdminAndFetchUsers = async () => {
-            try {
-                // If no user or not admin, redirect to home
-                if (!user) {
-                    router.push('/login');
-                    return;
-                }
-
-                if (user.role !== 'admin') {
-                    router.push('/');
-                    toast({
-                        title: 'Access Denied',
-                        description: 'Only administrators can access this page.',
-                        variant: 'destructive',
-                    });
-                    return;
-                }
-
-                const fetchedUsers = await api.getAllUsers();
-                setUsers(fetchedUsers);
-            } catch (error) {
-                console.error('Error fetching users:', error);
-                toast({
-                    title: 'Error',
-                    description: 'Failed to fetch users',
-                    variant: 'destructive',
-                });
-            } finally {
-                setIsLoading(false);
-            }
-        };
-
-        verifyAdminAndFetchUsers();
-    }, [user, router, toast]);
+        if (user?.role === 'firm') {
+            fetchLawyers();
+        }
+    }, [user]);
 
     const handleSubmit = async (e: React.FormEvent) => {
         e.preventDefault();
-        
-        // Verify admin role again before performing action
-        if (user?.role !== 'admin') {
-            toast({
-                title: 'Access Denied',
-                description: 'Only administrators can perform this action.',
-                variant: 'destructive',
-            });
-            return;
-        }
-
-        setIsAddingUser(true);
+        setIsAddingLawyer(true);
 
         try {
             // Validate password
@@ -93,71 +62,67 @@ export default function UsersPage() {
                 return;
             }
 
-            await api.signup(
-                formData.name,
-                formData.email,
-                formData.password,
-                formData.role as User['role']
-            );
+            await api.addLawyerToFirm({
+                name: formData.name,
+                email: formData.email,
+                password: formData.password,
+            });
 
             toast({
                 title: 'Success',
-                description: 'User created successfully',
+                description: 'Lawyer added successfully',
             });
 
-            // Refresh users list
-            const updatedUsers = await api.getAllUsers();
-            setUsers(updatedUsers);
+            // Refresh lawyers list
+            await fetchLawyers();
 
             // Reset form
             setFormData({
                 name: '',
                 email: '',
                 password: '',
-                role: '',
             });
         } catch (error) {
-            console.error('Error creating user:', error);
+            console.error('Error creating lawyer:', error);
             toast({
                 title: 'Error',
-                description: 'Failed to create user',
+                description: 'Failed to add lawyer',
                 variant: 'destructive',
             });
         } finally {
-            setIsAddingUser(false);
+            setIsAddingLawyer(false);
         }
     };
 
-    const handleDeleteUser = async (userId: string) => {
-        // Verify admin role again before performing action
-        if (user?.role !== 'admin') {
-            toast({
-                title: 'Access Denied',
-                description: 'Only administrators can perform this action.',
-                variant: 'destructive',
-            });
-            return;
-        }
-
+    const handleRemoveLawyer = async (lawyerId: string) => {
         try {
-            await api.deleteUser(userId);
+            await api.removeLawyerFromFirm(lawyerId);
             toast({
                 title: 'Success',
-                description: 'User deleted successfully',
+                description: 'Lawyer removed successfully',
             });
-            
-            // Refresh users list
-            const updatedUsers = await api.getAllUsers();
-            setUsers(updatedUsers);
+            await fetchLawyers();
         } catch (error) {
-            console.error('Error deleting user:', error);
+            console.error('Error removing lawyer:', error);
             toast({
                 title: 'Error',
-                description: 'Failed to delete user',
+                description: 'Failed to remove lawyer',
                 variant: 'destructive',
             });
         }
     };
+
+    if (user?.role !== 'firm') {
+        return (
+            <div className="container mx-auto py-10">
+                <Card>
+                    <CardContent className="p-6">
+                        <p>You do not have permission to access this page.</p>
+                    </CardContent>
+                </Card>
+            </div>
+        );
+    }
 
     if (isLoading) {
         return (
@@ -171,24 +136,20 @@ export default function UsersPage() {
         );
     }
 
-    if (!user || user.role !== 'admin') {
-        return null; // Return null as the useEffect will handle the redirect
-    }
-
     return (
         <div className="container mx-auto py-10">
             <div className="flex justify-between items-center mb-6">
-                <h1 className="text-3xl font-bold">User Management</h1>
+                <h1 className="text-3xl font-bold">Lawyer Management</h1>
                 <Dialog>
                     <DialogTrigger asChild>
                         <Button>
                             <UserPlus className="mr-2 h-4 w-4" />
-                            Add New User
+                            Add New Lawyer
                         </Button>
                     </DialogTrigger>
                     <DialogContent>
                         <DialogHeader>
-                            <DialogTitle>Add New User</DialogTitle>
+                            <DialogTitle>Add New Lawyer</DialogTitle>
                         </DialogHeader>
                         <form onSubmit={handleSubmit} className="space-y-4 mt-4">
                             <div className="space-y-2">
@@ -197,7 +158,7 @@ export default function UsersPage() {
                                     id="name"
                                     value={formData.name}
                                     onChange={(e) => setFormData({ ...formData, name: e.target.value })}
-                                    placeholder="Enter user's name"
+                                    placeholder="Enter lawyer's name"
                                     required
                                 />
                             </div>
@@ -208,7 +169,7 @@ export default function UsersPage() {
                                     type="email"
                                     value={formData.email}
                                     onChange={(e) => setFormData({ ...formData, email: e.target.value })}
-                                    placeholder="Enter user's email"
+                                    placeholder="Enter lawyer's email"
                                     required
                                 />
                             </div>
@@ -224,28 +185,8 @@ export default function UsersPage() {
                                     minLength={8}
                                 />
                             </div>
-                            <div className="space-y-2">
-                                <Label htmlFor="role">Role</Label>
-                                <Select
-                                    value={formData.role}
-                                    onValueChange={(value) => setFormData({ ...formData, role: value })}
-                                    required
-                                >
-                                    <SelectTrigger>
-                                        <SelectValue placeholder="Select user role" />
-                                    </SelectTrigger>
-                                    <SelectContent>
-                                        <SelectItem value="admin">Admin</SelectItem>
-                                        <SelectItem value="firm">Firm</SelectItem>
-                                        <SelectItem value="lawyer">Lawyer</SelectItem>
-                                        <SelectItem value="legal_researcher">Legal Researcher</SelectItem>
-                                        <SelectItem value="judge">Judge</SelectItem>
-                                        <SelectItem value="legal_professional">Legal Professional</SelectItem>
-                                    </SelectContent>
-                                </Select>
-                            </div>
-                            <Button type="submit" className="w-full" disabled={isAddingUser}>
-                                {isAddingUser ? 'Adding...' : 'Add User'}
+                            <Button type="submit" className="w-full" disabled={isAddingLawyer}>
+                                {isAddingLawyer ? 'Adding...' : 'Add Lawyer'}
                             </Button>
                         </form>
                     </DialogContent>
@@ -255,11 +196,11 @@ export default function UsersPage() {
             <Card>
                 <CardHeader>
                     <CardTitle className="flex items-center gap-2">
-                        <Shield className="h-5 w-5" />
-                        System Users
+                        <Users className="h-5 w-5" />
+                        Firm Lawyers
                     </CardTitle>
                     <CardDescription>
-                        Manage all users in the system
+                        Manage the lawyers associated with your firm
                     </CardDescription>
                 </CardHeader>
                 <CardContent>
@@ -268,22 +209,26 @@ export default function UsersPage() {
                             <TableRow>
                                 <TableHead>Name</TableHead>
                                 <TableHead>Email</TableHead>
-                                <TableHead>Role</TableHead>
+                                <TableHead>Status</TableHead>
                                 <TableHead className="text-right">Actions</TableHead>
                             </TableRow>
                         </TableHeader>
                         <TableBody>
-                            {users.length > 0 ? (
-                                users.map((user) => (
-                                    <TableRow key={user._id}>
-                                        <TableCell className="font-medium">{user.name}</TableCell>
-                                        <TableCell>{user.email}</TableCell>
-                                        <TableCell className="capitalize">{user.role}</TableCell>
+                            {lawyers.length > 0 ? (
+                                lawyers.map((lawyer) => (
+                                    <TableRow key={lawyer._id}>
+                                        <TableCell className="font-medium">{lawyer.name}</TableCell>
+                                        <TableCell>{lawyer.email}</TableCell>
+                                        <TableCell>
+                                            <span className="inline-flex items-center rounded-full px-2.5 py-0.5 text-xs font-medium bg-green-100 text-green-800">
+                                                Active
+                                            </span>
+                                        </TableCell>
                                         <TableCell className="text-right">
                                             <Button
                                                 variant="destructive"
                                                 size="sm"
-                                                onClick={() => handleDeleteUser(user._id)}
+                                                onClick={() => handleRemoveLawyer(lawyer._id)}
                                             >
                                                 <Trash2 className="h-4 w-4" />
                                             </Button>
@@ -293,7 +238,7 @@ export default function UsersPage() {
                             ) : (
                                 <TableRow>
                                     <TableCell colSpan={4} className="text-center">
-                                        No users found
+                                        No lawyers found
                                     </TableCell>
                                 </TableRow>
                             )}
