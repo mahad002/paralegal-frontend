@@ -46,7 +46,7 @@ export const api = {
     });
   },
 
-  getCurrentUser: async (): Promise<User> => {
+  getCurrentUser: async (token: string): Promise<User> => {
     try {
       const data = await fetchAPI<{ user: User }>('/users/me', { method: 'GET' });
       return data.user;

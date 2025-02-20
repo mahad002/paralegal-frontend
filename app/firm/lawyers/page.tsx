@@ -1,6 +1,7 @@
 'use client';
 
 import { useEffect, useState } from 'react';
+import { useRouter } from 'next/navigation';
 import { useAuth } from '@/contexts/AuthContext';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '@/components/ui/card';
@@ -22,8 +23,10 @@ export default function FirmLawyersPage() {
         email: '',
         password: '',
     });
+    
     const { user } = useAuth();
     const { toast } = useToast();
+    const router = useRouter();
 
     const fetchLawyers = async () => {
         try {
@@ -33,7 +36,7 @@ export default function FirmLawyersPage() {
             console.error('Error fetching lawyers:', error);
             toast({
                 title: 'Error',
-                description: 'Failed to fetch lawyers',
+                description: error instanceof Error ? error.message : 'Failed to fetch lawyers',
                 variant: 'destructive',
             });
         } finally {
@@ -42,16 +45,37 @@ export default function FirmLawyersPage() {
     };
 
     useEffect(() => {
-        if (user?.role === 'firm') {
-            fetchLawyers();
-        }
-    }, [user]);
+        const verifyFirmAndFetchLawyers = async () => {
+            if (!user) {
+                router.push('/login');
+                return;
+            }
+
+            if (user.role !== 'firm') {
+                router.push('/');
+                toast({
+                    title: 'Access Denied',
+                    description: 'Only law firms can access this page.',
+                    variant: 'destructive',
+                });
+                return;
+            }
+
+            await fetchLawyers();
+        };
+
+        verifyFirmAndFetchLawyers();
+    }, [user, router, toast]);
 
     const handleSubmit = async (e: React.FormEvent) => {
         e.preventDefault();
         setIsAddingLawyer(true);
 
         try {
+            if (!user || user.role !== 'firm') {
+                throw new Error('Only law firms can add lawyers');
+            }
+
             // Validate password
             if (formData.password.length < 8) {
                 toast({
@@ -83,10 +107,10 @@ export default function FirmLawyersPage() {
                 password: '',
             });
         } catch (error) {
-            console.error('Error creating lawyer:', error);
+            console.error('Error adding lawyer:', error);
             toast({
                 title: 'Error',
-                description: 'Failed to add lawyer',
+                description: error instanceof Error ? error.message : 'Failed to add lawyer',
                 variant: 'destructive',
             });
         } finally {
@@ -95,6 +119,15 @@ export default function FirmLawyersPage() {
     };
 
     const handleRemoveLawyer = async (lawyerId: string) => {
+        if (!user || user.role !== 'firm') {
+            toast({
+                title: 'Access Denied',
+                description: 'Only law firms can remove lawyers',
+                variant: 'destructive',
+            });
+            return;
+        }
+
         try {
             await api.removeLawyerFromFirm(lawyerId);
             toast({
@@ -106,23 +139,11 @@ export default function FirmLawyersPage() {
             console.error('Error removing lawyer:', error);
             toast({
                 title: 'Error',
-                description: 'Failed to remove lawyer',
+                description: error instanceof Error ? error.message : 'Failed to remove lawyer',
                 variant: 'destructive',
             });
         }
     };
-
-    if (user?.role !== 'firm') {
-        return (
-            <div className="container mx-auto py-10">
-                <Card>
-                    <CardContent className="p-6">
-                        <p>You do not have permission to access this page.</p>
-                    </CardContent>
-                </Card>
-            </div>
-        );
-    }
 
     if (isLoading) {
         return (
@@ -134,6 +155,10 @@ export default function FirmLawyersPage() {
                 </Card>
             </div>
         );
+    }
+
+    if (!user || user.role !== 'firm') {
+        return null; // Return null as the useEffect will handle the redirect
     }
 
     return (

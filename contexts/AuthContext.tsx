@@ -1,51 +1,72 @@
 'use client'
 
 import React, { createContext, useState, useContext, useCallback, useEffect } from 'react';
-import { useRouter } from 'next/navigation';
 import { api } from '@/lib/api';
 import type { User } from '@/types';
 
-interface AuthContextType {
+interface AuthState {
   user: User | null;
+  isLoading: boolean;
+  error: string | null;
+}
+
+interface AuthContextType extends AuthState {
   login: (email: string, password: string) => Promise<void>;
   logout: () => void;
-  isLoading: boolean;
   checkAuth: () => Promise<void>;
-  isAuthenticated: boolean;
-  hasRole: (roles: User['role'] | User['role'][]) => boolean;
+  clearError: () => void;
 }
 
 const AuthContext = createContext<AuthContextType | undefined>(undefined);
 
 export function AuthProvider({ children }: { children: React.ReactNode }) {
-  const [user, setUser] = useState<User | null>(null);
-  const [isLoading, setIsLoading] = useState(true);
-  const router = useRouter();
+  const [state, setState] = useState<AuthState>({
+    user: null,
+    isLoading: true,
+    error: null,
+  });
+
+  const clearError = useCallback(() => {
+    setState(prev => ({ ...prev, error: null }));
+  }, []);
+
+  const setLoading = useCallback((isLoading: boolean) => {
+    setState(prev => ({ ...prev, isLoading }));
+  }, []);
+
+  const setUser = useCallback((user: User | null) => {
+    setState(prev => ({ ...prev, user, error: null }));
+  }, []);
+
+  const setError = useCallback((error: string) => {
+    setState(prev => ({ ...prev, error }));
+  }, []);
 
   const login = async (email: string, password: string) => {
-    setIsLoading(true);
+    setLoading(true);
+    clearError();
+
     try {
       const { token, user } = await api.login(email, password);
       
       if (!token || !user) {
-        throw new Error('Invalid response from server');
+        throw new Error('Invalid response from server: Missing token or user data');
       }
 
       if (typeof window !== 'undefined') {
         localStorage.setItem('token', token);
       }
-      
+
       setUser(user);
-      await checkAuth(); // Verify the token and user data
     } catch (error) {
-      console.error('Login error:', error);
-      setUser(null);
-      if (typeof window !== 'undefined') {
-        localStorage.removeItem('token');
-      }
+      const errorMessage = error instanceof Error 
+        ? error.message 
+        : 'An unexpected error occurred during login';
+      
+      setError(errorMessage);
       throw error;
     } finally {
-      setIsLoading(false);
+      setLoading(false);
     }
   };
 
@@ -54,63 +75,46 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
       localStorage.removeItem('token');
     }
     setUser(null);
-    router.push('/login');
-  }, [router]);
+  }, [setUser]);
 
   const checkAuth = useCallback(async () => {
     const token = typeof window !== 'undefined' ? localStorage.getItem('token') : null;
     
     if (!token) {
-      setIsLoading(false);
-      setUser(null);
+      setLoading(false);
       return;
     }
 
     try {
-      setIsLoading(true);
-      const user = await api.getCurrentUser();
+      setLoading(true);
+      const user = await api.getCurrentUser(token);
       
       if (user && user._id) {
         setUser(user);
       } else {
-        throw new Error('Invalid user data');
+        logout();
+        setError('Invalid user data received');
       }
     } catch (error) {
       console.error('Auth check error:', error);
-      setUser(null);
-      if (typeof window !== 'undefined') {
-        localStorage.removeItem('token');
-      }
-      router.push('/login');
+      logout();
+      setError('Session expired or invalid');
     } finally {
-      setIsLoading(false);
+      setLoading(false);
     }
-  }, [router]);
+  }, [logout, setUser, setError, setLoading]);
 
-  // Check authentication status on mount and token changes
+  // Initial auth check on mount
   useEffect(() => {
     checkAuth();
   }, [checkAuth]);
 
-  // Function to check if user has specific role(s)
-  const hasRole = useCallback((roles: User['role'] | User['role'][]) => {
-    if (!user) return false;
-    
-    if (Array.isArray(roles)) {
-      return roles.includes(user.role);
-    }
-    
-    return user.role === roles;
-  }, [user]);
-
   const value = {
-    user,
+    ...state,
     login,
     logout,
-    isLoading,
     checkAuth,
-    isAuthenticated: !!user,
-    hasRole,
+    clearError,
   };
 
   return (

@@ -37,11 +37,7 @@ const getNavItems = (role: string) => {
 export function Navbar() {
     const pathname = usePathname();
     const router = useRouter();
-    const { user, logout, checkAuth } = useAuth();
-
-    useEffect(() => {
-        checkAuth();
-    }, [checkAuth]);
+    const { user, logout, isLoading } = useAuth();
 
     const navItems = user ? getNavItems(user.role) : [];
 
@@ -49,6 +45,18 @@ export function Navbar() {
         logout();
         router.push('/login');
     };
+
+    // Don't show anything while checking authentication
+    if (isLoading) {
+        return (
+            <nav className="flex h-16 items-center border-b bg-background px-4 lg:px-6">
+                <div className="flex items-center gap-2 font-semibold">
+                    <FolderOpen className="h-6 w-6" />
+                    <span className="hidden sm:inline-block">Paralegal</span>
+                </div>
+            </nav>
+        );
+    }
 
     return (
         <nav className="flex h-16 items-center border-b bg-background px-4 lg:px-6">

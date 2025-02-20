@@ -13,7 +13,7 @@ import { useToast } from '@/components/ui/use-toast';
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from '@/components/ui/dialog';
 import { api } from '@/lib/api';
 import type { User } from '@/types';
-import { Trash2, UserPlus, Shield } from 'lucide-react';
+import { Trash2, UserPlus, Users, Shield } from 'lucide-react';
 
 export default function UsersPage() {
     const [users, setUsers] = useState<User[]>([]);
