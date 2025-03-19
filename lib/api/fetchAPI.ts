@@ -1,4 +1,8 @@
-const API_URL = process.env.NEXT_PUBLIC_API_URL || 'https://paralegal-backend.onrender.com';
+const API_URL = process.env.NEXT_PUBLIC_API_URL;
+
+if (!API_URL) {
+  console.error('API_URL environment variable is not set');
+}
 
 async function fetchAPI<T>(endpoint: string, options: RequestInit = {}): Promise<T | { error: string }> {
   const token = typeof window !== 'undefined' ? localStorage.getItem('token') : null;
@@ -21,7 +25,7 @@ async function fetchAPI<T>(endpoint: string, options: RequestInit = {}): Promise
     const response = await fetch(`${API_URL}${endpoint}`, {
       ...options,
       headers,
-      signal: controller.signal,
+      signal: controller.signal
     });
 
     clearTimeout(timeout);
