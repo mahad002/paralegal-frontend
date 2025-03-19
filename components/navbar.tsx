@@ -1,133 +1,52 @@
-'use client';
-
-import Link from 'next/link';
-import { usePathname, useRouter } from 'next/navigation';
-import { Bot, FileText, FolderOpen, History, User, LogOut, LogIn, Menu, Users } from 'lucide-react';
-import { useEffect } from 'react';
+import { Menu } from 'lucide-react';
+import { Button } from './ui/button';
 import { useAuth } from '@/contexts/AuthContext';
-import { Button } from '@/components/ui/button';
-import {
-    DropdownMenu,
-    DropdownMenuContent,
-    DropdownMenuItem,
-    DropdownMenuTrigger,
-} from '@/components/ui/dropdown-menu';
 
-const getNavItems = (role: string) => {
-    const baseItems = [
-        { name: 'Dashboard', href: '/', icon: FolderOpen },
-        { name: 'Case Management', href: '/case-management', icon: FileText },
-        { name: 'Case Notes', href: '/case-notes', icon: FileText },
-        { name: 'Compliance Bot', href: '/compliance-bot', icon: Bot },
-        { name: 'History Logs', href: '/history-logs', icon: History },
-        { name: 'Profile', href: '/profile', icon: User },
-    ];
+interface NavbarProps {
+  onMenuClick: () => void;
+  isSidebarOpen: boolean;
+}
 
-    if (role === 'admin') {
-        return [...baseItems, { name: 'User Management', href: '/users', icon: Users }];
-    }
+export function Navbar({ onMenuClick, isSidebarOpen }: NavbarProps) {
+  const { user, logout } = useAuth();
 
-    if (role === 'firm') {
-        return [...baseItems, { name: 'Lawyer Management', href: '/firm/lawyers', icon: Users }];
-    }
+  return (
+    <header className="sticky top-0 z-40 border-b border-gray-800 bg-gray-900/95 backdrop-blur supports-[backdrop-filter]:bg-gray-900/75">
+      <div className="container flex h-16 items-center justify-between px-4">
+        <div className="flex items-center gap-4">
+          <Button
+            variant="ghost"
+            size="icon"
+            className="lg:hidden text-gray-400 hover:text-white"
+            onClick={onMenuClick}
+          >
+            <Menu className="h-6 w-6" />
+          </Button>
+          {!isSidebarOpen && (
+            <Button
+              variant="ghost"
+              size="icon"
+              className="hidden lg:flex text-gray-400 hover:text-white"
+              onClick={onMenuClick}
+            >
+              <Menu className="h-6 w-6" />
+            </Button>
+          )}
+        </div>
 
-    return baseItems;
-};
-
-export function Navbar() {
-    const pathname = usePathname();
-    const router = useRouter();
-    const { user, logout, isLoading } = useAuth();
-
-    const navItems = user ? getNavItems(user.role) : [];
-
-    const handleLogout = () => {
-        logout();
-        router.push('/login');
-    };
-
-    // Don't show anything while checking authentication
-    if (isLoading) {
-        return (
-            <nav className="flex h-16 items-center border-b bg-background px-4 lg:px-6">
-                <div className="flex items-center gap-2 font-semibold">
-                    <FolderOpen className="h-6 w-6" />
-                    <span className="hidden sm:inline-block">Paralegal</span>
-                </div>
-            </nav>
-        );
-    }
-
-    return (
-        <nav className="flex h-16 items-center border-b bg-background px-4 lg:px-6">
-            <Link href="/" className="flex items-center gap-2 font-semibold">
-                <FolderOpen className="h-6 w-6" />
-                <span className="hidden sm:inline-block">Paralegal</span>
-            </Link>
-
-            <div className="ml-auto flex items-center space-x-4">
-                {user ? (
-                    <>
-                        <div className="hidden lg:flex lg:items-center lg:space-x-4">
-                            {navItems.map((item) => (
-                                <Button
-                                    key={item.name}
-                                    variant="ghost"
-                                    size="sm"
-                                    className={pathname === item.href ? 'bg-muted' : ''}
-                                    asChild
-                                >
-                                    <Link href={item.href}>
-                                        <item.icon className="mr-2 h-4 w-4" />
-                                        {item.name}
-                                    </Link>
-                                </Button>
-                            ))}
-                            <Button variant="ghost" size="sm" onClick={handleLogout}>
-                                <LogOut className="mr-2 h-4 w-4" />
-                                Sign Out
-                            </Button>
-                        </div>
-                        <DropdownMenu>
-                            <DropdownMenuTrigger asChild>
-                                <Button variant="ghost" size="sm" className="lg:hidden">
-                                    <Menu className="h-5 w-5" />
-                                </Button>
-                            </DropdownMenuTrigger>
-                            <DropdownMenuContent align="end">
-                                {navItems.map((item) => (
-                                    <DropdownMenuItem key={item.name} asChild>
-                                        <Link href={item.href} className="flex items-center">
-                                            <item.icon className="mr-2 h-4 w-4" />
-                                            {item.name}
-                                        </Link>
-                                    </DropdownMenuItem>
-                                ))}
-                                <DropdownMenuItem onSelect={handleLogout}>
-                                    <LogOut className="mr-2 h-4 w-4" />
-                                    Sign Out
-                                </DropdownMenuItem>
-                            </DropdownMenuContent>
-                        </DropdownMenu>
-                    </>
-                ) : (
-                    pathname !== '/login' && (
-                        <>
-                            <Button variant="ghost" size="sm" className="hidden lg:inline-flex" asChild>
-                                <Link href="/login">
-                                    <LogIn className="mr-2 h-4 w-4" />
-                                    Log In
-                                </Link>
-                            </Button>
-                            <Button variant="ghost" size="sm" className="lg:hidden" asChild>
-                                <Link href="/login">
-                                    <LogIn className="h-5 w-5" />
-                                </Link>
-                            </Button>
-                        </>
-                    )
-                )}
-            </div>
-        </nav>
-    );
+        <div className="flex items-center gap-4">
+          {user && (
+            <Button
+              variant="ghost"
+              size="sm"
+              className="text-gray-400 hover:text-white"
+              onClick={() => logout()}
+            >
+              Sign out
+            </Button>
+          )}
+        </div>
+      </div>
+    </header>
+  );
 }

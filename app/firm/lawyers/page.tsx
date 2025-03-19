@@ -4,273 +4,318 @@ import { useEffect, useState } from 'react';
 import { useRouter } from 'next/navigation';
 import { useAuth } from '@/contexts/AuthContext';
 import { Button } from '@/components/ui/button';
-import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '@/components/ui/card';
+import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
+import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from '@/components/ui/dialog';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
-import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
 import { useToast } from '@/components/ui/use-toast';
-import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from '@/components/ui/dialog';
-import { api } from '@/lib/api';
+import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
+import { UserPlus, Trash2, Mail, Calendar } from 'lucide-react';
+import * as UserAPI from '@/lib/api/User';
 import type { User } from '@/types';
-import { Trash2, UserPlus, Users } from 'lucide-react';
 
-export default function FirmLawyersPage() {
-    const [lawyers, setLawyers] = useState<User[]>([]);
-    const [isLoading, setIsLoading] = useState(true);
-    const [isAddingLawyer, setIsAddingLawyer] = useState(false);
-    const [formData, setFormData] = useState({
-        name: '',
-        email: '',
-        password: '',
-    });
-    
-    const { user } = useAuth();
-    const { toast } = useToast();
-    const router = useRouter();
+export default function LawyersPage() {
+  const router = useRouter();
+  const { user, isLoading: authLoading } = useAuth();
+  const { toast } = useToast();
+  const [lawyers, setLawyers] = useState<User[] | null>(null);
+  const [isLoading, setIsLoading] = useState(true);
+  const [newLawyer, setNewLawyer] = useState({
+    name: '',
+    email: '',
+    password: '',
+  });
+  const [isDialogOpen, setIsDialogOpen] = useState(false);
 
+  useEffect(() => {
+    if (!authLoading && (!user || user.role !== 'firm')) {
+      router.push('/');
+      return;
+    }
+  }, [user, authLoading, router]);
+
+  useEffect(() => {
     const fetchLawyers = async () => {
-        try {
-            const fetchedLawyers = await api.getFirmLawyers();
-            setLawyers(fetchedLawyers);
-        } catch (error) {
-            console.error('Error fetching lawyers:', error);
-            toast({
-                title: 'Error',
-                description: error instanceof Error ? error.message : 'Failed to fetch lawyers',
-                variant: 'destructive',
-            });
-        } finally {
-            setIsLoading(false);
+      try {
+        setIsLoading(true);
+        const response = await UserAPI.getFirmLawyers();
+        
+        if ('error' in response) {
+          throw new Error(response.error);
         }
+        
+        setLawyers(response.lawyers || []);
+      } catch (error) {
+        console.error('Error fetching lawyers:', error);
+        toast({
+          title: 'Error',
+          description: 'Failed to fetch lawyers. Please try again.',
+          variant: 'destructive',
+        });
+      } finally {
+        setIsLoading(false);
+      }
     };
 
-    useEffect(() => {
-        const verifyFirmAndFetchLawyers = async () => {
-            if (!user) {
-                router.push('/login');
-                return;
-            }
-
-            if (user.role !== 'firm') {
-                router.push('/');
-                toast({
-                    title: 'Access Denied',
-                    description: 'Only law firms can access this page.',
-                    variant: 'destructive',
-                });
-                return;
-            }
-
-            await fetchLawyers();
-        };
-
-        verifyFirmAndFetchLawyers();
-    }, [user, router, toast]);
-
-    const handleSubmit = async (e: React.FormEvent) => {
-        e.preventDefault();
-        setIsAddingLawyer(true);
-
-        try {
-            if (!user || user.role !== 'firm') {
-                throw new Error('Only law firms can add lawyers');
-            }
-
-            // Validate password
-            if (formData.password.length < 8) {
-                toast({
-                    title: 'Invalid Password',
-                    description: 'Password must be at least 8 characters long',
-                    variant: 'destructive',
-                });
-                return;
-            }
-
-            await api.addLawyerToFirm({
-                name: formData.name,
-                email: formData.email,
-                password: formData.password,
-            });
-
-            toast({
-                title: 'Success',
-                description: 'Lawyer added successfully',
-            });
-
-            // Refresh lawyers list
-            await fetchLawyers();
-
-            // Reset form
-            setFormData({
-                name: '',
-                email: '',
-                password: '',
-            });
-        } catch (error) {
-            console.error('Error adding lawyer:', error);
-            toast({
-                title: 'Error',
-                description: error instanceof Error ? error.message : 'Failed to add lawyer',
-                variant: 'destructive',
-            });
-        } finally {
-            setIsAddingLawyer(false);
-        }
-    };
-
-    const handleRemoveLawyer = async (lawyerId: string) => {
-        if (!user || user.role !== 'firm') {
-            toast({
-                title: 'Access Denied',
-                description: 'Only law firms can remove lawyers',
-                variant: 'destructive',
-            });
-            return;
-        }
-
-        try {
-            await api.removeLawyerFromFirm(lawyerId);
-            toast({
-                title: 'Success',
-                description: 'Lawyer removed successfully',
-            });
-            await fetchLawyers();
-        } catch (error) {
-            console.error('Error removing lawyer:', error);
-            toast({
-                title: 'Error',
-                description: error instanceof Error ? error.message : 'Failed to remove lawyer',
-                variant: 'destructive',
-            });
-        }
-    };
-
-    if (isLoading) {
-        return (
-            <div className="container mx-auto py-10">
-                <Card>
-                    <CardContent className="p-6">
-                        <p>Loading...</p>
-                    </CardContent>
-                </Card>
-            </div>
-        );
+    if (!authLoading && user?.role === 'firm') {
+      fetchLawyers();
     }
+  }, [user, toast]);
 
-    if (!user || user.role !== 'firm') {
-        return null; // Return null as the useEffect will handle the redirect
+  const handleAddLawyer = async (e: React.FormEvent) => {
+    e.preventDefault();
+    try {
+      const response = await UserAPI.registerLawyerThroughFirm(
+        newLawyer.name,
+        newLawyer.email,
+        newLawyer.password
+      );
+
+      if ('error' in response) {
+        throw new Error(response.error);
+      }
+
+      toast({
+        title: 'Success',
+        description: 'Lawyer added successfully.',
+      });
+
+      // Refresh lawyers list
+      const updatedLawyers = await UserAPI.getFirmLawyers();
+      if (!('error' in updatedLawyers)) {
+        setLawyers(updatedLawyers.lawyers);
+      }
+
+      // Reset form and close dialog
+      setNewLawyer({ name: '', email: '', password: '' });
+      setIsDialogOpen(false);
+    } catch (error) {
+      console.error('Error adding lawyer:', error);
+      toast({
+        title: 'Error',
+        description: 'Failed to add lawyer. Please try again.',
+        variant: 'destructive',
+      });
     }
+  };
 
-    return (
-        <div className="container mx-auto py-10">
-            <div className="flex justify-between items-center mb-6">
-                <h1 className="text-3xl font-bold">Lawyer Management</h1>
-                <Dialog>
-                    <DialogTrigger asChild>
-                        <Button>
-                            <UserPlus className="mr-2 h-4 w-4" />
-                            Add New Lawyer
-                        </Button>
-                    </DialogTrigger>
-                    <DialogContent>
-                        <DialogHeader>
-                            <DialogTitle>Add New Lawyer</DialogTitle>
-                        </DialogHeader>
-                        <form onSubmit={handleSubmit} className="space-y-4 mt-4">
-                            <div className="space-y-2">
-                                <Label htmlFor="name">Name</Label>
-                                <Input
-                                    id="name"
-                                    value={formData.name}
-                                    onChange={(e) => setFormData({ ...formData, name: e.target.value })}
-                                    placeholder="Enter lawyer's name"
-                                    required
-                                />
-                            </div>
-                            <div className="space-y-2">
-                                <Label htmlFor="email">Email</Label>
-                                <Input
-                                    id="email"
-                                    type="email"
-                                    value={formData.email}
-                                    onChange={(e) => setFormData({ ...formData, email: e.target.value })}
-                                    placeholder="Enter lawyer's email"
-                                    required
-                                />
-                            </div>
-                            <div className="space-y-2">
-                                <Label htmlFor="password">Password</Label>
-                                <Input
-                                    id="password"
-                                    type="password"
-                                    value={formData.password}
-                                    onChange={(e) => setFormData({ ...formData, password: e.target.value })}
-                                    placeholder="Enter password (minimum 8 characters)"
-                                    required
-                                    minLength={8}
-                                />
-                            </div>
-                            <Button type="submit" className="w-full" disabled={isAddingLawyer}>
-                                {isAddingLawyer ? 'Adding...' : 'Add Lawyer'}
-                            </Button>
-                        </form>
-                    </DialogContent>
-                </Dialog>
-            </div>
+  const handleRemoveLawyer = async (lawyerId: string) => {
+    try {
+      const response = await UserAPI.removeLawyerFromFirm(lawyerId);
+      if ('error' in response) {
+        throw new Error(response.error);
+      }
 
-            <Card>
-                <CardHeader>
-                    <CardTitle className="flex items-center gap-2">
-                        <Users className="h-5 w-5" />
-                        Firm Lawyers
-                    </CardTitle>
-                    <CardDescription>
-                        Manage the lawyers associated with your firm
-                    </CardDescription>
-                </CardHeader>
-                <CardContent>
-                    <Table>
-                        <TableHeader>
-                            <TableRow>
-                                <TableHead>Name</TableHead>
-                                <TableHead>Email</TableHead>
-                                <TableHead>Status</TableHead>
-                                <TableHead className="text-right">Actions</TableHead>
-                            </TableRow>
-                        </TableHeader>
-                        <TableBody>
-                            {lawyers.length > 0 ? (
-                                lawyers.map((lawyer) => (
-                                    <TableRow key={lawyer._id}>
-                                        <TableCell className="font-medium">{lawyer.name}</TableCell>
-                                        <TableCell>{lawyer.email}</TableCell>
-                                        <TableCell>
-                                            <span className="inline-flex items-center rounded-full px-2.5 py-0.5 text-xs font-medium bg-green-100 text-green-800">
-                                                Active
-                                            </span>
-                                        </TableCell>
-                                        <TableCell className="text-right">
-                                            <Button
-                                                variant="destructive"
-                                                size="sm"
-                                                onClick={() => handleRemoveLawyer(lawyer._id)}
-                                            >
-                                                <Trash2 className="h-4 w-4" />
-                                            </Button>
-                                        </TableCell>
-                                    </TableRow>
-                                ))
-                            ) : (
-                                <TableRow>
-                                    <TableCell colSpan={4} className="text-center">
-                                        No lawyers found
-                                    </TableCell>
-                                </TableRow>
-                            )}
-                        </TableBody>
-                    </Table>
-                </CardContent>
-            </Card>
+      toast({
+        title: 'Success',
+        description: 'Lawyer removed successfully.',
+      });
+
+      // Update lawyers list
+      setLawyers(lawyers.filter(lawyer => lawyer._id !== lawyerId));
+    } catch (error) {
+      console.error('Error removing lawyer:', error);
+      toast({
+        title: 'Error',
+        description: 'Failed to remove lawyer. Please try again.',
+        variant: 'destructive',
+      });
+    }
+  };
+
+  if (isLoading || authLoading) {
+    return <div className="flex justify-center items-center h-screen">Loading...</div>;
+  }
+
+  if (!user || user.role !== 'firm') return null;
+
+  return (
+    <div className="container mx-auto p-6">
+      <div className="flex justify-between items-center mb-6">
+        <h1 className="text-3xl font-bold text-black">Lawyer Management</h1>
+        <div className="flex gap-3">
+          <Dialog>
+            <DialogTrigger asChild>
+              <Button className="bg-gray-900 hover:bg-gray-800 text-white">
+                <UserPlus className="mr-2 h-4 w-4" />
+                Add Existing Lawyer
+              </Button>
+            </DialogTrigger>
+            <DialogContent className="bg-gray-900 border-gray-800">
+              <DialogHeader>
+                <DialogTitle className="text-white">Add Existing Lawyer</DialogTitle>
+              </DialogHeader>
+              <form onSubmit={async (e) => {
+                e.preventDefault();
+                const formData = new FormData(e.currentTarget);
+                const lawyerId = formData.get('lawyerId') as string;
+                
+                try {
+                  const response = await UserAPI.addExistingLawyerToFirm(lawyerId);
+                  if ('error' in response) {
+                    throw new Error(response.error);
+                  }
+                  
+                  toast({
+                    title: 'Success',
+                    description: 'Lawyer added successfully.',
+                  });
+                  
+                  // Refresh lawyers list
+                  const updatedLawyers = await UserAPI.getFirmLawyers();
+                  if (!('error' in updatedLawyers)) {
+                    setLawyers(updatedLawyers.lawyers);
+                  }
+                } catch (error) {
+                  console.error('Error adding existing lawyer:', error);
+                  toast({
+                    title: 'Error',
+                    description: 'Failed to add lawyer. Please try again.',
+                    variant: 'destructive',
+                  });
+                }
+              }} className="space-y-4">
+                <div className="space-y-2">
+                  <Label htmlFor="lawyerId" className="text-gray-200">Lawyer ID</Label>
+                  <Input
+                    id="lawyerId"
+                    name="lawyerId"
+                    placeholder="Enter lawyer's ID"
+                    required
+                    className="bg-gray-800 border-gray-700 text-white"
+                  />
+                </div>
+                <Button type="submit" className="w-full bg-gradient-to-r from-cyan-500 to-blue-500 hover:from-cyan-600 hover:to-blue-600">
+                  Add Lawyer
+                </Button>
+              </form>
+            </DialogContent>
+          </Dialog>
+          <Dialog open={isDialogOpen} onOpenChange={setIsDialogOpen}>
+            <DialogTrigger asChild>
+              <Button className="bg-gray-900 hover:bg-gray-800 text-white">
+                <UserPlus className="mr-2 h-4 w-4" />
+                Register New Lawyer
+              </Button>
+            </DialogTrigger>
+            <DialogContent className="bg-gray-900 border-gray-800">
+              <DialogHeader>
+                <DialogTitle className="text-white">Register New Lawyer</DialogTitle>
+              </DialogHeader>
+              <form onSubmit={handleAddLawyer} className="space-y-4">
+              <div className="space-y-2">
+                <Label htmlFor="name" className="text-gray-200">Full Name</Label>
+                <Input
+                  id="name"
+                  value={newLawyer.name}
+                  onChange={(e) => setNewLawyer({ ...newLawyer, name: e.target.value })}
+                  placeholder="John Doe"
+                  required
+                  className="bg-gray-800 border-gray-700 text-white"
+                />
+              </div>
+              <div className="space-y-2">
+                <Label htmlFor="email" className="text-gray-200">Email</Label>
+                <Input
+                  id="email"
+                  type="email"
+                  value={newLawyer.email}
+                  onChange={(e) => setNewLawyer({ ...newLawyer, email: e.target.value })}
+                  placeholder="john@example.com"
+                  required
+                  className="bg-gray-800 border-gray-700 text-white"
+                />
+              </div>
+              <div className="space-y-2">
+                <Label htmlFor="password" className="text-gray-200">Password</Label>
+                <Input
+                  id="password"
+                  type="password"
+                  value={newLawyer.password}
+                  onChange={(e) => setNewLawyer({ ...newLawyer, password: e.target.value })}
+                  placeholder="••••••••"
+                  required
+                  className="bg-gray-800 border-gray-700 text-white"
+                />
+              </div>
+              <div className="flex justify-end space-x-2">
+                <Button
+                  type="button"
+                  variant="outline"
+                  onClick={() => setIsDialogOpen(false)}
+                  className="border-gray-700 text-gray-300 hover:bg-gray-800"
+                >
+                  Cancel
+                </Button>
+                <Button
+                  type="submit"
+                  className="bg-gradient-to-r from-cyan-500 to-blue-500 hover:from-cyan-600 hover:to-blue-600"
+                >
+                  Register Lawyer
+                </Button>
+              </div>
+              </form>
+            </DialogContent>
+          </Dialog>
         </div>
-    );
+      </div>
+
+      <Card className="bg-gray-900 border-gray-800">
+        <CardHeader>
+          <CardTitle className="text-white">Firm Lawyers</CardTitle>
+        </CardHeader>
+        <CardContent>
+          <div className="overflow-x-auto">
+            <Table>
+              <TableHeader>
+                <TableRow className="border-gray-800">
+                  <TableHead className="text-gray-300">Name</TableHead>
+                  <TableHead className="text-gray-300">Email</TableHead>
+                  <TableHead className="text-gray-300">Active Cases</TableHead>
+                  <TableHead className="text-gray-300">Joined Date</TableHead>
+                  <TableHead className="text-gray-300">Actions</TableHead>
+                </TableRow>
+              </TableHeader>
+              <TableBody>
+                {lawyers && lawyers.length > 0 ? lawyers.map((lawyer) => (
+                  <TableRow key={lawyer._id} className="border-gray-800">
+                    <TableCell className="font-medium text-white">{lawyer.name}</TableCell>
+                    <TableCell className="text-gray-300">
+                      <div className="flex items-center">
+                        <Mail className="h-4 w-4 mr-2 text-gray-400" />
+                        {lawyer.email}
+                      </div>
+                    </TableCell>
+                    <TableCell className="text-gray-300">{lawyer.cases?.length || 0}</TableCell>
+                    <TableCell className="text-gray-300">
+                      <div className="flex items-center">
+                        <Calendar className="h-4 w-4 mr-2 text-gray-400" />
+                        {new Date(lawyer.createdAt).toLocaleDateString()}
+                      </div>
+                    </TableCell>
+                    <TableCell>
+                      <Button
+                        variant="destructive"
+                        size="sm"
+                        onClick={() => handleRemoveLawyer(lawyer._id)}
+                        className="bg-red-600 hover:bg-red-700"
+                      >
+                        <Trash2 className="h-4 w-4" />
+                      </Button>
+                    </TableCell>
+                  </TableRow>
+                )) : (
+                  <TableRow>
+                    <TableCell colSpan={5} className="text-center text-gray-400 py-8">
+                      No lawyers found. Add your first lawyer to get started.
+                    </TableCell>
+                  </TableRow>
+                )}
+              </TableBody>
+            </Table>
+          </div>
+        </CardContent>
+      </Card>
+    </div>
+  );
 }

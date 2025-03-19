@@ -1,7 +1,7 @@
-'use client'
+'use client';
 
 import React, { createContext, useState, useContext, useCallback, useEffect } from 'react';
-import { api } from '@/lib/api';
+import * as UserAPI from '@/lib/api/User';
 import type { User } from '@/types';
 
 interface AuthState {
@@ -38,7 +38,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
     setState(prev => ({ ...prev, user, error: null }));
   }, []);
 
-  const setError = useCallback((error: string) => {
+  const setError = useCallback((error: string | null) => {
     setState(prev => ({ ...prev, error }));
   }, []);
 
@@ -47,23 +47,28 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
     clearError();
 
     try {
-      const { token, user } = await api.login(email, password);
-      
-      if (!token || !user) {
-        throw new Error('Invalid response from server: Missing token or user data');
+      const response = await UserAPI.login(email, password);
+
+      if (!response || 'error' in response) {
+        throw new Error(response?.error || 'Login failed');
       }
 
-      if (typeof window !== 'undefined') {
-        localStorage.setItem('token', token);
+      if (response.token) {
+        localStorage.setItem('token', response.token);
+      } else {
+        throw new Error('No token received');
       }
 
-      setUser(user);
+      if (response.user) {
+        setUser(response.user);
+      } else {
+        throw new Error('No user data received');
+      }
     } catch (error) {
-      const errorMessage = error instanceof Error 
-        ? error.message 
-        : 'An unexpected error occurred during login';
-      
+      const errorMessage = error instanceof Error ? error.message : 'Login error occurred';
       setError(errorMessage);
+      localStorage.removeItem('token');
+      setUser(null);
       throw error;
     } finally {
       setLoading(false);
@@ -71,40 +76,53 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
   };
 
   const logout = useCallback(() => {
-    if (typeof window !== 'undefined') {
-      localStorage.removeItem('token');
-    }
+    localStorage.removeItem('token');
     setUser(null);
-  }, [setUser]);
+    setError(null);
+  }, [setUser, setError]);
 
   const checkAuth = useCallback(async () => {
-    const token = typeof window !== 'undefined' ? localStorage.getItem('token') : null;
-    
-    if (!token) {
-      setLoading(false);
-      return;
-    }
+    setLoading(true);
+    clearError();
+    const token = localStorage.getItem('token');
 
     try {
-      setLoading(true);
-      const user = await api.getCurrentUser(token);
-      
-      if (user && user._id) {
-        setUser(user);
+      if (!token) {
+        console.warn('No token found, logging out');
+        setUser(null);
+        setLoading(false);
+        return;
+      }
+
+      const response = await UserAPI.getCurrentUser();
+      console.log('Auth check response:', response);
+
+      if ('error' in response) {
+        console.error('Error fetching user:', response.error);
+        localStorage.removeItem('token');
+        setUser(null);
+        setError(response.error);
+        return;
+      }
+
+      if (response._id) {
+        setUser(response);
+        clearError();
       } else {
+        console.error('Invalid user data received:', response);
         logout();
         setError('Invalid user data received');
       }
     } catch (error) {
       console.error('Auth check error:', error);
-      logout();
+      localStorage.removeItem('token');
+      setUser(null);
       setError('Session expired or invalid');
     } finally {
       setLoading(false);
     }
   }, [logout, setUser, setError, setLoading]);
 
-  // Initial auth check on mount
   useEffect(() => {
     checkAuth();
   }, [checkAuth]);
@@ -117,16 +135,12 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
     clearError,
   };
 
-  return (
-    <AuthContext.Provider value={value}>
-      {children}
-    </AuthContext.Provider>
-  );
+  return <AuthContext.Provider value={value}>{children}</AuthContext.Provider>;
 }
 
 export function useAuth() {
   const context = useContext(AuthContext);
-  if (context === undefined) {
+  if (!context) {
     throw new Error('useAuth must be used within an AuthProvider');
   }
   return context;

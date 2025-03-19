@@ -1,7 +1,7 @@
 'use client';
 
 import { useEffect, useState } from 'react';
-import { useParams } from 'next/navigation';
+import { useParams, useRouter } from 'next/navigation';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Input } from '@/components/ui/input';
@@ -9,11 +9,13 @@ import { Label } from '@/components/ui/label';
 import { Textarea } from '@/components/ui/textarea';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { useToast } from '@/components/ui/use-toast';
-import { api } from '@/lib/api';
+import * as CaseAPI from '@/lib/api/Case';
+import { ArrowLeft, FileText, Edit, Trash2 } from 'lucide-react';
 import type { Case } from '@/types';
 
 export default function CaseDetailPage() {
   const { id } = useParams();
+  const router = useRouter();
   const [caseData, setCaseData] = useState<Case | null>(null);
   const [isLoading, setIsLoading] = useState(true);
   const [isEditing, setIsEditing] = useState(false);
@@ -27,7 +29,10 @@ export default function CaseDetailPage() {
       let data;
       try {
         if (typeof id === 'string') {
-          const data1 = await api.getCase(id);
+          const data1 = await CaseAPI.getCaseById(id);
+          if ('error' in data1) {
+            throw new Error(data1.error);
+          }
           data = data1;
         } else {
           throw new Error('Invalid case ID');
@@ -62,7 +67,10 @@ export default function CaseDetailPage() {
     let updatedCase;
     try {
       if (typeof id === 'string') {
-        const updatedCase1 = await api.updateCase(id, editedData);
+        const updatedCase1 = await CaseAPI.updateCase(id, editedData);
+        if ('error' in updatedCase1) {
+          throw new Error(updatedCase1.error);
+        }
         updatedCase = updatedCase1;
         setCaseData(updatedCase);
         setIsEditing(false);
@@ -84,7 +92,10 @@ export default function CaseDetailPage() {
   const handleDeleteCase = async () => {
     try {
       if (typeof id === 'string') {
-        await api.deleteCase(id);
+        const response = await CaseAPI.deleteCase(id);
+        if ('error' in response) {
+          throw new Error(response.error);
+        }
       } else {
         throw new Error('Invalid case ID');
       }
@@ -123,35 +134,52 @@ export default function CaseDetailPage() {
   }
 
   return (
-    <div className="container mx-auto py-10">
-      <Card>
+    <div className="container mx-auto p-6 bg-gray-900 min-h-screen">
+      <div className="flex items-center gap-4 mb-6">
+        <Button
+          variant="ghost"
+          onClick={() => router.push('/case-management')}
+          className="text-gray-400 hover:text-white"
+        >
+          <ArrowLeft className="h-4 w-4 mr-2" />
+          Back to Cases
+        </Button>
+        <h1 className="text-3xl font-bold text-white">Case Details</h1>
+      </div>
+
+      <Card className="bg-gray-900 border-gray-800">
         <CardHeader>
-          <CardTitle>{isEditing ? 'Edit Case' : 'Case Details'}</CardTitle>
+          <CardTitle className="text-white flex items-center gap-2">
+            <FileText className="h-5 w-5" />
+            {isEditing ? 'Edit Case' : `Case #${caseData.caseNumber}`}
+          </CardTitle>
         </CardHeader>
         <CardContent>
           <form onSubmit={handleSubmit} className="space-y-6">
             <div className="space-y-2">
-              <Label htmlFor="caseTitle">Case Title</Label>
+              <Label htmlFor="caseTitle" className="text-gray-300">Case Title</Label>
               <Input
                 id="caseTitle"
                 name="caseTitle"
                 value={isEditing ? editedData.caseTitle || '' : caseData.caseTitle}
                 onChange={handleChange}
                 disabled={!isEditing}
+                className="bg-gray-800 border-gray-700 text-white placeholder:text-gray-500"
               />
             </div>
             <div className="space-y-2">
-              <Label htmlFor="caseNumber">Case Number</Label>
+              <Label htmlFor="caseNumber" className="text-gray-300">Case Number</Label>
               <Input
                 id="caseNumber"
                 name="caseNumber"
                 value={isEditing ? editedData.caseNumber || '' : caseData.caseNumber}
                 onChange={handleChange}
                 disabled={!isEditing}
+                className="bg-gray-800 border-gray-700 text-white placeholder:text-gray-500"
               />
             </div>
             <div className="space-y-2">
-              <Label htmlFor="description">Description</Label>
+              <Label htmlFor="description" className="text-gray-300">Description</Label>
               <Textarea
                 id="description"
                 name="description"
@@ -159,42 +187,63 @@ export default function CaseDetailPage() {
                 onChange={handleChange}
                 rows={4}
                 disabled={!isEditing}
+                className="bg-gray-800 border-gray-700 text-white placeholder:text-gray-500"
               />
             </div>
             <div className="space-y-2">
-              <Label htmlFor="status">Status</Label>
+              <Label htmlFor="status" className="text-gray-300">Status</Label>
               <Select
                 onValueChange={handleStatusChange}
                 value={isEditing ? editedData.status : caseData.status}
                 disabled={!isEditing}
               >
-                <SelectTrigger>
+                <SelectTrigger className="bg-gray-800 border-gray-700 text-white hover:bg-gray-700">
                   <SelectValue placeholder="Select case status" />
                 </SelectTrigger>
-                <SelectContent>
-                  <SelectItem value="Open">Open</SelectItem>
-                  <SelectItem value="In Progress">In Progress</SelectItem>
-                  <SelectItem value="Resolved">Resolved</SelectItem>
-                  <SelectItem value="Closed">Closed</SelectItem>
+                <SelectContent className="bg-gray-800 border-gray-700 text-white">
+                  <SelectItem value="Open" className="text-white">Open</SelectItem>
+                  <SelectItem value="In Progress" className="text-white">In Progress</SelectItem>
+                  <SelectItem value="Resolved" className="text-white">Resolved</SelectItem>
+                  <SelectItem value="Closed" className="text-white">Closed</SelectItem>
                 </SelectContent>
               </Select>
             </div>
-            <div className="flex justify-between items-center">
+            <div className="flex justify-between items-center pt-6 border-t border-gray-800">
               {isEditing ? (
                 <div className="flex space-x-4">
-                  <Button type="button" variant="outline" onClick={handleCancelEdit}>
+                  <Button
+                    type="button"
+                    variant="outline"
+                    onClick={handleCancelEdit}
+                    className="border-gray-700 text-gray-300 hover:bg-gray-800"
+                  >
                     Cancel
                   </Button>
-                  <Button type="submit" disabled={isSaving}>
+                  <Button
+                    type="submit"
+                    disabled={isSaving}
+                    className="bg-gradient-to-r from-cyan-500 to-blue-500 hover:from-cyan-600 hover:to-blue-600"
+                  >
                     {isSaving ? 'Saving...' : 'Save Changes'}
                   </Button>
                 </div>
               ) : (
-                <Button type="button" onClick={handleEditClick}>
+                <Button
+                  type="button"
+                  onClick={handleEditClick}
+                  className="border-gray-700 text-gray-300 hover:bg-gray-800 hover:text-white"
+                >
+                  <Edit className="h-4 w-4 mr-2" />
                   Edit Case
                 </Button>
               )}
-              <Button type="button" variant="destructive" onClick={() => setIsDeletePopupOpen(true)}>
+              <Button
+                type="button"
+                variant="destructive"
+                onClick={() => setIsDeletePopupOpen(true)}
+                className="bg-red-600 hover:bg-red-700"
+              >
+                <Trash2 className="h-4 w-4 mr-2" />
                 Delete Case
               </Button>
             </div>
@@ -202,15 +251,25 @@ export default function CaseDetailPage() {
         </CardContent>
       </Card>
       {isDeletePopupOpen && (
-        <div className="fixed inset-0 flex items-center justify-center bg-black bg-opacity-50">
-          <div className="bg-white p-6 rounded shadow-lg">
-            <p className="mb-4">Are you sure you want to delete this case?</p>
+        <div className="fixed inset-0 flex items-center justify-center bg-black/50 backdrop-blur-sm">
+          <div className="bg-gray-900 border border-gray-800 p-6 rounded-lg shadow-xl max-w-md w-full mx-4">
+            <h3 className="text-xl font-semibold text-white mb-2">Delete Case</h3>
+            <p className="text-gray-400 mb-4">Are you sure you want to delete this case? This action cannot be undone.</p>
             <div className="flex justify-end space-x-4">
-              <Button variant="outline" onClick={() => setIsDeletePopupOpen(false)}>
+              <Button
+                variant="outline"
+                onClick={() => setIsDeletePopupOpen(false)}
+                className="border-gray-700 text-gray-300 hover:bg-gray-800 hover:text-white"
+              >
                 Cancel
               </Button>
-              <Button variant="destructive" onClick={handleDeleteCase}>
-                Confirm
+              <Button
+                variant="destructive"
+                onClick={handleDeleteCase}
+                className="bg-red-600 hover:bg-red-700"
+              >
+                <Trash2 className="h-4 w-4 mr-2" />
+                Confirm Delete
               </Button>
             </div>
           </div>

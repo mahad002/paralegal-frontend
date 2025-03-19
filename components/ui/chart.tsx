@@ -42,45 +42,53 @@ const ChartContainer = React.forwardRef<HTMLDivElement, ChartContainerProps>(
 )
 ChartContainer.displayName = "ChartContainer"
 
-const ChartTooltip = React.forwardRef<
-  HTMLDivElement,
-  React.ComponentPropsWithoutRef<typeof Tooltip>
->(({ content, ...props }) => {
-  return <Tooltip content={content} {...props} />
-})
+interface ChartTooltipProps extends React.ComponentPropsWithoutRef<typeof Tooltip> {
+  content?: React.ReactNode
+}
+
+const ChartTooltip = React.forwardRef<HTMLDivElement, ChartTooltipProps>(
+  ({ content, ...props }, ref) => {
+    return <Tooltip content={content} {...props} wrapperStyle={{ outline: 'none' }} />
+  }
+)
 ChartTooltip.displayName = "ChartTooltip"
 
-const ChartTooltipContent = React.forwardRef<
-  HTMLDivElement,
-  TooltipProps<number, string>
->(({ active, payload, label }) => {
-  if (active && payload && payload.length) {
-    return (
-      <div className="rounded-lg border bg-background p-2 shadow-sm">
-        <div className="grid grid-cols-2 gap-2">
-          <div className="flex flex-col">
-            <span className="text-[0.70rem] uppercase text-muted-foreground">
-              {label}
-            </span>
-            <span className="font-bold text-muted-foreground">
-              {payload[0].value}
-            </span>
-          </div>
-          <div className="flex flex-col">
-            <span className="text-[0.70rem] uppercase text-muted-foreground">
-              Change
-            </span>
-            <span className="font-bold text-muted-foreground">
-              {payload[1].value}
-            </span>
+interface ChartTooltipContentProps extends TooltipProps<number, string> {
+  className?: string
+}
+
+const ChartTooltipContent = React.forwardRef<HTMLDivElement, ChartTooltipContentProps>(
+  ({ active, payload, label, className }, ref) => {
+    if (active && payload && payload.length) {
+      return (
+        <div ref={ref} className={cn("rounded-lg border bg-background p-2 shadow-sm", className)}>
+          <div className="grid grid-cols-2 gap-2">
+            <div className="flex flex-col">
+              <span className="text-[0.70rem] uppercase text-muted-foreground">
+                {label}
+              </span>
+              <span className="font-bold text-muted-foreground">
+                {payload[0].value}
+              </span>
+            </div>
+            {payload.length > 1 && (
+              <div className="flex flex-col">
+                <span className="text-[0.70rem] uppercase text-muted-foreground">
+                  Change
+                </span>
+                <span className="font-bold text-muted-foreground">
+                  {payload[1].value}
+                </span>
+              </div>
+            )}
           </div>
         </div>
-      </div>
-    )
-  }
+      )
+    }
 
-  return null
-})
+    return null
+  }
+)
 ChartTooltipContent.displayName = "ChartTooltipContent"
 
 export { ChartContainer, ChartTooltip, ChartTooltipContent }

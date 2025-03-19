@@ -1,15 +1,15 @@
-import type { Metadata } from "next";
-import "./globals.css";
 import { Inter } from 'next/font/google'
 import { Layout } from '@/components/layout'
+import { Toaster } from '@/components/ui/toaster'
 import { AuthProvider } from '@/contexts/AuthContext'
-import { Toaster } from "@/components/ui/toaster"
+import { SplashProvider } from '@/contexts/SplashContext'
+import './globals.css'
 
 const inter = Inter({ subsets: ['latin'] })
 
-export const metadata: Metadata = {
-  title: 'Paralegal System',
-  description: 'A comprehensive legal case management system',
+export const metadata = {
+  title: 'Paralegal Assistant',
+  description: 'A modern web application for legal professionals',
 }
 
 export default function RootLayout({
@@ -18,13 +18,15 @@ export default function RootLayout({
   children: React.ReactNode
 }) {
   return (
-    <html lang="en" className={inter.className}>
-      <body>
+    <html lang="en">
+      <body className={inter.className}>
         <AuthProvider>
-          <Layout>
-            {children}
-          </Layout>
-          <Toaster />
+          <SplashProvider>
+            <Layout>
+              {children}
+            </Layout>
+            <Toaster />
+          </SplashProvider>
         </AuthProvider>
       </body>
     </html>
