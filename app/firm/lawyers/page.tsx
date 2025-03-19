@@ -3,6 +3,7 @@
 import { useEffect, useState } from 'react';
 import { useRouter } from 'next/navigation';
 import { useAuth } from '@/contexts/AuthContext';
+import * as CaseAPI from '@/lib/api/Case';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from '@/components/ui/dialog';
@@ -12,13 +13,17 @@ import { useToast } from '@/components/ui/use-toast';
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
 import { UserPlus, Trash2, Mail, Calendar } from 'lucide-react';
 import * as UserAPI from '@/lib/api/User';
-import type { User } from '@/types';
+import type { User, Case } from '@/types';
+
+interface LawyerWithCases extends User {
+  cases?: Case[];
+}
 
 export default function LawyersPage() {
   const router = useRouter();
   const { user, isLoading: authLoading } = useAuth();
   const { toast } = useToast();
-  const [lawyers, setLawyers] = useState<User[]>([]);
+  const [lawyers, setLawyers] = useState<LawyerWithCases[]>([]);
   const [isLoading, setIsLoading] = useState(true);
   const [newLawyer, setNewLawyer] = useState({
     name: '',
@@ -38,13 +43,36 @@ export default function LawyersPage() {
     const fetchLawyers = async () => {
       try {
         setIsLoading(true);
-        const response = await UserAPI.getFirmLawyers();
+        const casesResponse = await CaseAPI.getCasesByFirm();
+
+        console.log(casesResponse)
+        const firmLawyersResponse = await UserAPI.getFirmLawyers();
+        const lawyersResponse = 'lawyers' in firmLawyersResponse ? firmLawyersResponse.lawyers : [];
         
-        if ('error' in response) {
-          throw new Error(response.error);
+        if (Array.isArray(lawyersResponse)) {
+          const lawyersWithCases = lawyersResponse.map(lawyer => ({
+            ...lawyer,
+            cases: Array.isArray(casesResponse) ? casesResponse.filter(c => {
+              // Check if the case owner matches the lawyer
+              if (typeof c.caseOwner === 'object' && c.caseOwner._id === lawyer._id) {
+                return true;
+              }
+              // Check if the case creator matches the lawyer
+              if (typeof c.creator === 'object' && c.creator._id === lawyer._id) {
+                return true;
+              }
+              return false;
+            }) : []
+          }));
+          setLawyers(lawyersWithCases);
+        } else {
+          console.error('Error fetching lawyers:', lawyersResponse);
+          toast({
+            title: 'Error',
+            description: 'Failed to fetch lawyers. Please try again.',
+            variant: 'destructive',
+          });
         }
-        
-        setLawyers(response.lawyers);
       } catch (error) {
         console.error('Error fetching lawyers:', error);
         toast({
@@ -292,8 +320,12 @@ export default function LawyersPage() {
                     </TableCell>
                     <TableCell className="text-gray-300">{lawyer.email}</TableCell>
                     <TableCell className="text-gray-300">
-                      {/* Get case count from API response */}
-                      0 cases
+                      <div className="flex items-center gap-2">
+                        <span className="font-medium">{lawyer.cases?.filter(c => 
+                          c.status === 'Open' || c.status === 'In Progress'
+                        ).length || 0}</span>
+                        <span className="text-gray-400">active</span>
+                      </div>
                     </TableCell>
                     <TableCell className="text-gray-300">
                       <div className="flex items-center">
