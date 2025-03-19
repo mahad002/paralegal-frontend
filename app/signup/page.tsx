@@ -11,14 +11,11 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@
 import { useToast } from '@/components/ui/use-toast';
 import { Scale, Gavel, Mail, Lock, User, Briefcase } from 'lucide-react';
 
-// Define the allowed role types
-type Role = 'admin' | 'legal_researcher' | 'lawyer' | 'judge' | 'legal_professional';
-
 export default function SignupPage() {
   const [name, setName] = useState('');
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
-  const [role, setRole] = useState<Role | ''>('');
+  const [role, setRole] = useState<'legal_researcher' | 'lawyer' | 'judge' | 'legal_professional'>('legal_researcher');
   const [isLoading, setIsLoading] = useState(false);
   const router = useRouter();
   const { toast } = useToast();
@@ -60,17 +57,8 @@ export default function SignupPage() {
       return false;
     }
 
-    if (!role) {
-      toast({
-        title: 'Error',
-        description: 'Please select a role',
-        variant: 'destructive',
-      });
-      return false;
-    }
-
     return true;
-  }, [name, email, password, role, toast]);
+  }, [name, email, password, toast]);
 
   const handleSubmit = async (e: React.FormEvent<HTMLFormElement>) => {
     e.preventDefault();
@@ -159,7 +147,10 @@ export default function SignupPage() {
             </div>
             <div className="relative">
               <Briefcase className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400 h-5 w-5" />
-              <Select onValueChange={(value) => setRole(value as Role)} required>
+              <Select 
+                value={role}
+                onValueChange={(value: 'legal_researcher' | 'lawyer' | 'judge' | 'legal_professional') => setRole(value)}
+              >
                 <SelectTrigger className="w-full pl-10 bg-gray-800 border-gray-700 text-white">
                   <SelectValue placeholder="Select your role" />
                 </SelectTrigger>

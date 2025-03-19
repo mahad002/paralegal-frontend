@@ -21,8 +21,19 @@ export const login = async (email: string, password: string): Promise<LoginRespo
 
 // 🔹 **Get Currently Authenticated User**
 // Returns: { user } or { error }
+interface GetCurrentUserResponse {
+  success: boolean;
+  user?: User;
+  error?: string;
+}
+
 export const getCurrentUser = async (): Promise<User | { error: string }> => {
   const response: { success?: boolean; user?: User; error?: string } = await fetchAPI('/users/me', { method: 'GET' });
+
+
+  if ('error' in response) {
+    return { error: response.error || 'Unknown error' };
+  }
 
   console.log("Current User Response:", response);
 
@@ -78,7 +89,7 @@ export const deleteUser = async (id: string): Promise<{ message: string } | { er
 // Lawyer Management APIs for Firms
 // Get lawyers under a firm
 // Returns: Array of User objects (Lawyers) or { error: string }
-export const getFirmLawyers = async (): Promise<User[] | { error: string }> =>
+export const getFirmLawyers = async (): Promise<{ lawyers: User[] } | { error: string }> =>
   handleAPI(fetchAPI('/users/lawyers', { method: 'GET' }));
 
 // 🔹 **Add an Existing Lawyer to a Firm**

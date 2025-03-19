@@ -1,6 +1,6 @@
 'use client';
 
-import { useEffect, useState } from 'react';
+import { JSXElementConstructor, Key, ReactElement, ReactNode, ReactPortal, useEffect, useState } from 'react';
 import { useRouter } from 'next/navigation';
 import { useAuth } from '@/contexts/AuthContext';
 import { useSplash } from '@/contexts/SplashContext';
@@ -15,6 +15,7 @@ import type { Case } from '@/types';
 import type { User } from '@/types';
 
 interface DashboardMetrics {
+  lawyerStats: any;
   totalCases: number;
   openCases: number;
   resolvedCases: number;
@@ -59,11 +60,13 @@ export default function HomePage() {
         const assignedCases = cases.filter(c => c.caseOwner === lawyer._id).length;
         acc.totalAssignedCases += assignedCases;
         acc.caseDistribution.push({ name: lawyer.name, count: assignedCases });
+        acc.averageCasesPerLawyer = "0";
         return acc;
       },
       {
         totalAssignedCases: 0,
-        caseDistribution: [],
+        caseDistribution: [] as { name: string; count: number }[],
+        averageCasesPerLawyer: "0"
       }
     );
   
@@ -113,7 +116,14 @@ export default function HomePage() {
       };
     }
   
-    return baseMetrics;
+    return {
+      ...baseMetrics,
+      lawyerStats: {
+        totalAssignedCases: 0,
+        caseDistribution: [],
+        averageCasesPerLawyer: "0"
+      }
+    };
   };
 
   // Ensure user is authenticated, otherwise redirect to login
@@ -133,6 +143,8 @@ useEffect(() => {
       let casesResponse: Case[] | { error: string } = [];
       let lawyersResponse: User[] | { error: string } = [];
 
+      console.log("Fetching data for user role:", user.role);
+
       switch (user.role) {
         case 'admin':
           casesResponse = await CaseAPI.getAllCases();
@@ -140,7 +152,8 @@ useEffect(() => {
           break;
         case 'firm':
           casesResponse = await CaseAPI.getCasesByFirm();
-          lawyersResponse = await UserAPI.getFirmLawyers();
+          const firmLawyersResponse = await UserAPI.getFirmLawyers();
+          lawyersResponse = 'lawyers' in firmLawyersResponse ? firmLawyersResponse.lawyers : [];
           break;
         default:
           casesResponse = await CaseAPI.getCasesByUser(user._id);
@@ -152,11 +165,72 @@ useEffect(() => {
         return;
       }
 
-      let lawyers: User[] = [];
-      if (Array.isArray(lawyersResponse)) {
-        lawyers = lawyersResponse;
-      }
-      const calculatedMetrics = calculateMetrics(casesResponse, user.role, lawyers || []);
+      const lawyers = user.role === 'admin' ? 
+        (Array.isArray(lawyersResponse) ? lawyersResponse : []) : 
+        (Array.isArray(lawyersResponse) ? lawyersResponse : []);
+      
+      const cases = Array.isArray(casesResponse) ? casesResponse : [];
+
+      // Calculate role distribution for admin
+      const roleDistribution = user.role === 'admin' ? lawyers.reduce((acc: { [x: string]: any; }, user: { role: string | number; }) => {
+        acc[user.role] = (acc[user.role] || 0) + 1;
+        return acc;
+      }, {} as Record<string, number>) : {};
+
+      // Convert role distribution to array format
+      const usersByRole = Object.entries(roleDistribution).map(([name, value]) => ({
+        name,
+        value: value as number
+      }));
+
+      // Calculate lawyer metrics
+      const lawyerMetrics = lawyers.map((lawyer: { _id: string | User | undefined; name: any; }) => {
+        const lawyerCases = cases.filter(c => c.assignedLawyer === lawyer._id);
+        const activeCases = lawyerCases.filter(c => c.status === 'Open' || c.status === 'In Progress');
+        const completedCases = lawyerCases.filter(c => c.status === 'Resolved' || c.status === 'Closed');
+        return {
+          name: lawyer.name,
+          totalCases: lawyerCases.length,
+          activeCases: activeCases.length,
+          completedCases: completedCases.length,
+          completionRate: lawyerCases.length ? (completedCases.length / lawyerCases.length) * 100 : 0
+        };
+      });
+
+      // Calculate base metrics
+      const statusCounts = cases.reduce((acc, c) => {
+        acc[c.status] = (acc[c.status] || 0) + 1;
+        return acc;
+      }, {} as Record<string, number>);
+
+      const monthlyTrend = cases.reduce((acc, c) => {
+        const month = new Date(c.createdAt).toLocaleString('default', { month: 'short' });
+        acc[month] = (acc[month] || 0) + 1;
+        return acc;
+      }, {} as Record<string, number>);
+
+      const calculatedMetrics = {
+        totalCases: cases.length,
+        openCases: statusCounts['Open'] || 0,
+        resolvedCases: statusCounts['Resolved'] || 0,
+        closedCases: statusCounts['Closed'] || 0,
+        totalLawyers: lawyers.length,
+        totalFirms: lawyers.filter((l: { role: string; }) => l.role === 'firm').length,
+        activeLawyers: lawyers.filter((l: { role: string; }) => l.role === 'lawyer').length,
+        usersByRole,
+        lawyerStats: {
+          completionRates: lawyerMetrics.map((l: { name: any; completionRate: number; }) => ({
+            name: l.name,
+            rate: Math.round(l.completionRate * 10) / 10
+          })),
+          caseDistribution: lawyerMetrics.map((l: { name: any; activeCases: any; }) => ({
+            name: l.name,
+            count: l.activeCases
+          }))
+        },
+        casesByStatus: Object.entries(statusCounts).map(([name, value]) => ({ name, value })),
+        casesTrend: Object.entries(monthlyTrend).map(([month, cases]) => ({ month, cases }))
+      };
       setMetrics(calculatedMetrics);
     } catch (error) {
       console.error('Error fetching cases:', error);
@@ -426,16 +500,16 @@ useEffect(() => {
                     </TableRow>
                   </TableHeader>
                   <TableBody>
-                    {(metrics.lawyerStats?.caseDistribution || []).map((lawyer) => (
-                      <TableRow key={lawyer.name} className="border-gray-800">
+                    {(metrics.lawyerStats?.caseDistribution || []).map((lawyer: { name: boolean | ReactElement<any, string | JSXElementConstructor<any>> | Iterable<ReactNode> | Key | null | undefined; count: string | number | boolean | ReactElement<any, string | JSXElementConstructor<any>> | Iterable<ReactNode> | ReactPortal | null | undefined; }) => (
+                      <TableRow key={String(lawyer.name)} className="border-gray-800">
                         <TableCell className="font-medium text-white">
-                          {lawyer.name}
+                          {String(lawyer.name)}
                         </TableCell>
                         <TableCell className="text-gray-300">
                           {lawyer.count}
                         </TableCell>
                         <TableCell className="text-gray-300">
-                          {metrics.lawyerStats?.completionRates?.find(l => l.name === lawyer.name)?.rate || 0}
+                          {metrics.lawyerStats?.completionRates?.find((l: { name: any; }) => l.name === lawyer.name)?.rate || 0}
                         </TableCell>
                         <TableCell className="text-gray-300">
                           <div className="flex items-center">
@@ -443,12 +517,12 @@ useEffect(() => {
                               <div
                                 className="bg-cyan-400 h-2 rounded-full"
                                 style={{
-                                  width: `${metrics.lawyerStats?.completionRates?.find(l => l.name === lawyer.name)?.rate || 0}%`
+                                  width: `${metrics.lawyerStats?.completionRates?.find((l: { name: any; }) => l.name === lawyer.name)?.rate || 0}%`
                                 }}
                               />
                             </div>
                             <span>
-                              {metrics.lawyerStats?.completionRates?.find(l => l.name === lawyer.name)?.rate || 0}%
+                              {metrics.lawyerStats?.completionRates?.find((l: { name: any; }) => l.name === lawyer.name)?.rate || 0}%
                             </span>
                           </div>
                         </TableCell>

@@ -18,7 +18,7 @@ export default function LawyersPage() {
   const router = useRouter();
   const { user, isLoading: authLoading } = useAuth();
   const { toast } = useToast();
-  const [lawyers, setLawyers] = useState<User[] | null>(null);
+  const [lawyers, setLawyers] = useState<User[]>([]);
   const [isLoading, setIsLoading] = useState(true);
   const [newLawyer, setNewLawyer] = useState({
     name: '',
@@ -44,7 +44,7 @@ export default function LawyersPage() {
           throw new Error(response.error);
         }
         
-        setLawyers(response.lawyers || []);
+        setLawyers(response.lawyers);
       } catch (error) {
         console.error('Error fetching lawyers:', error);
         toast({
@@ -279,14 +279,22 @@ export default function LawyersPage() {
               <TableBody>
                 {lawyers && lawyers.length > 0 ? lawyers.map((lawyer) => (
                   <TableRow key={lawyer._id} className="border-gray-800">
-                    <TableCell className="font-medium text-white">{lawyer.name}</TableCell>
-                    <TableCell className="text-gray-300">
-                      <div className="flex items-center">
-                        <Mail className="h-4 w-4 mr-2 text-gray-400" />
-                        {lawyer.email}
+                    <TableCell>
+                      <div className="flex items-center gap-3">
+                        <div className="flex h-10 w-10 items-center justify-center rounded-full bg-gray-800 text-white">
+                          {lawyer.name.charAt(0).toUpperCase()}
+                        </div>
+                        <div>
+                          <p className="font-medium text-white">{lawyer.name}</p>
+                          <p className="text-sm text-gray-400">ID: {lawyer._id.slice(-6)}</p>
+                        </div>
                       </div>
                     </TableCell>
-                    <TableCell className="text-gray-300">{lawyer.cases?.length || 0}</TableCell>
+                    <TableCell className="text-gray-300">{lawyer.email}</TableCell>
+                    <TableCell className="text-gray-300">
+                      {/* Get case count from API response */}
+                      0 cases
+                    </TableCell>
                     <TableCell className="text-gray-300">
                       <div className="flex items-center">
                         <Calendar className="h-4 w-4 mr-2 text-gray-400" />
@@ -307,7 +315,7 @@ export default function LawyersPage() {
                 )) : (
                   <TableRow>
                     <TableCell colSpan={5} className="text-center text-gray-400 py-8">
-                      No lawyers found. Add your first lawyer to get started.
+                      No lawyers found
                     </TableCell>
                   </TableRow>
                 )}

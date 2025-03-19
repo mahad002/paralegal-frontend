@@ -2,6 +2,7 @@
 
 import * as React from "react"
 import { Tooltip, TooltipProps } from 'recharts'
+import type { ContentType } from 'recharts/types/component/Tooltip'
 
 import { cn } from "@/lib/utils"
 
@@ -13,6 +14,9 @@ interface ChartContainerProps extends React.HTMLAttributes<HTMLDivElement> {
     }
   }
 }
+
+type ValueType = string | number | Array<string | number>
+type NameType = string | number
 
 const ChartContainer = React.forwardRef<HTMLDivElement, ChartContainerProps>(
   ({ className, config, children, ...props }, ref) => {
@@ -42,8 +46,8 @@ const ChartContainer = React.forwardRef<HTMLDivElement, ChartContainerProps>(
 )
 ChartContainer.displayName = "ChartContainer"
 
-interface ChartTooltipProps extends React.ComponentPropsWithoutRef<typeof Tooltip> {
-  content?: React.ReactNode
+interface ChartTooltipProps extends Omit<TooltipProps<ValueType, NameType>, 'content'> {
+  content?: ContentType<ValueType, NameType>
 }
 
 const ChartTooltip = React.forwardRef<HTMLDivElement, ChartTooltipProps>(
@@ -53,7 +57,7 @@ const ChartTooltip = React.forwardRef<HTMLDivElement, ChartTooltipProps>(
 )
 ChartTooltip.displayName = "ChartTooltip"
 
-interface ChartTooltipContentProps extends TooltipProps<number, string> {
+interface ChartTooltipContentProps extends TooltipProps<ValueType, NameType> {
   className?: string
 }
 

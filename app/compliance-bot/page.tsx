@@ -226,7 +226,8 @@ export default function ComplianceBotPage() {
                         {currentRequest.result?.split('\n\n').map((section, index) => {
                           // Handle headers (lines starting with #)
                           if (section.startsWith('#')) {
-                            const level = section.match(/^#+/)[0].length;
+                            const match = section.match(/^#+/);
+                            const level = match ? match[0].length : 0;
                             const text = section.replace(/^#+\s*/, '');
                             return (
                               <div key={index} className={`${level === 1 ? 'text-2xl' : 'text-xl'} font-bold text-white`}>

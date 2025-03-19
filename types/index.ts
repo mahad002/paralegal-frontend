@@ -5,12 +5,13 @@ export interface User {
   password: string; // Note: This should not be exposed in client-side code
   role: 'admin' | 'firm' | 'lawyer' | 'legal_researcher' | 'judge' | 'legal_professional';
   firmId?: string; // Reference to the firm for lawyers
-  lawyers?: string[]; // Array of lawyer IDs for firms
+  lawyers: string[]; // Array of lawyer IDs for firms
   createdAt: string;
   updatedAt: string;
 }
 
 export interface Case {
+  updatedAt: string;
   _id: string;
   caseTitle: string;
   caseNumber: string;
