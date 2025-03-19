@@ -8,4 +8,4 @@ const nextConfig = {
   },
 };
 
-module.exports = nextConfig;AC
+module.exports = nextConfig;
