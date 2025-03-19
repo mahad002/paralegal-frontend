@@ -132,7 +132,7 @@ export default function LawyersPage() {
   return (
     <div className="container mx-auto p-6">
       <div className="flex justify-between items-center mb-6">
-        <h1 className="text-3xl font-bold text-black">Lawyer Management</h1>
+        <h1 className="text-3xl font-bold text-white">Lawyer Management</h1>
         <div className="flex gap-3">
           <Dialog>
             <DialogTrigger asChild>
