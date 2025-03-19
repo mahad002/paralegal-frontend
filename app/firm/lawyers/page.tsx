@@ -28,12 +28,11 @@ export default function LawyersPage() {
   const [isDialogOpen, setIsDialogOpen] = useState(false);
 
   useEffect(() => {
-    if (authLoading) return; // Ensure loading state is handled properly
-  
-    if (!user || user.role !== 'firm') {
+    if (!authLoading && (!user || user.role !== 'firm')) {
       router.push('/');
+      return;
     }
-  }, [authLoading, user, router]);  
+  }, [user, authLoading, router]);
 
   useEffect(() => {
     const fetchLawyers = async () => {

@@ -7,13 +7,13 @@ export function SplashScreen() {
       initial={{ opacity: 0 }}
       animate={{ opacity: 1 }}
       exit={{ opacity: 0 }}
-      className="fixed inset-0 z-50 flex flex-col items-center justify-center bg-gray-900"
+      className="fixed inset-0 z-50 flex flex-col items-center justify-center bg-gradient-to-br from-gray-900 via-blue-900 to-purple-900"
     >
       <motion.div
         initial={{ scale: 0.5, opacity: 0 }}
         animate={{ scale: 1, opacity: 1 }}
         transition={{ delay: 0.2 }}
-        className="flex items-center gap-4 mb-8 bg-gradient-to-r from-cyan-500/10 to-blue-500/10 p-8 rounded-full"
+        className="flex items-center gap-4 mb-8"
       >
         <Scale className="w-16 h-16 text-cyan-400" />
         <Gavel className="w-16 h-16 text-cyan-400" />
@@ -23,7 +23,7 @@ export function SplashScreen() {
         initial={{ y: 20, opacity: 0 }}
         animate={{ y: 0, opacity: 1 }}
         transition={{ delay: 0.4 }}
-        className="text-4xl md:text-5xl font-bold text-white text-center mb-4"
+        className="text-4xl md:text-5xl font-bold text-cyan-400 text-center mb-4"
       >
         Paralegal
       </motion.h1>
@@ -32,7 +32,7 @@ export function SplashScreen() {
         initial={{ y: 20, opacity: 0 }}
         animate={{ y: 0, opacity: 1 }}
         transition={{ delay: 0.6 }}
-        className="text-xl text-gray-400 text-center max-w-md px-4"
+        className="text-xl text-cyan-300/90 text-center max-w-md px-4"
       >
         A comprehensive legal case management system
       </motion.p>
@@ -54,7 +54,7 @@ export function SplashScreen() {
               repeat: Infinity,
               repeatDelay: 0.2,
             }}
-            className="w-3 h-3 bg-cyan-500 rounded-full"
+            className="w-3 h-3 bg-cyan-400 rounded-full"
           />
           <motion.div
             animate={{
@@ -67,7 +67,7 @@ export function SplashScreen() {
               repeatDelay: 0.2,
               delay: 0.2,
             }}
-            className="w-3 h-3 bg-cyan-500 rounded-full"
+            className="w-3 h-3 bg-cyan-400 rounded-full"
           />
           <motion.div
             animate={{
@@ -80,7 +80,7 @@ export function SplashScreen() {
               repeatDelay: 0.2,
               delay: 0.4,
             }}
-            className="w-3 h-3 bg-cyan-500 rounded-full"
+            className="w-3 h-3 bg-cyan-400 rounded-full"
           />
         </div>
       </motion.div>
