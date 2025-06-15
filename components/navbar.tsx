@@ -1,6 +1,15 @@
-import { Menu } from 'lucide-react';
+import { Menu, Bell, Search, Settings, LogOut } from 'lucide-react';
 import { Button } from './ui/button';
+import { Input } from './ui/input';
 import { useAuth } from '@/contexts/AuthContext';
+import {
+  DropdownMenu,
+  DropdownMenuContent,
+  DropdownMenuItem,
+  DropdownMenuLabel,
+  DropdownMenuSeparator,
+  DropdownMenuTrigger,
+} from './ui/dropdown-menu';
 
 interface NavbarProps {
   onMenuClick: () => void;
@@ -11,13 +20,13 @@ export function Navbar({ onMenuClick, isSidebarOpen }: NavbarProps) {
   const { user, logout } = useAuth();
 
   return (
-    <header className="sticky top-0 z-40 border-b border-gray-800 bg-gray-900/95 backdrop-blur supports-[backdrop-filter]:bg-gray-900/75">
+    <header className="sticky top-0 z-40 glass-card border-b border-slate-700/50">
       <div className="container flex h-16 items-center justify-between px-4">
         <div className="flex items-center gap-4">
           <Button
             variant="ghost"
             size="icon"
-            className="lg:hidden text-gray-400 hover:text-white"
+            className="lg:hidden text-slate-400 hover:text-white hover:bg-slate-800/50"
             onClick={onMenuClick}
           >
             <Menu className="h-6 w-6" />
@@ -26,24 +35,80 @@ export function Navbar({ onMenuClick, isSidebarOpen }: NavbarProps) {
             <Button
               variant="ghost"
               size="icon"
-              className="hidden lg:flex text-gray-400 hover:text-white"
+              className="hidden lg:flex text-slate-400 hover:text-white hover:bg-slate-800/50"
               onClick={onMenuClick}
             >
               <Menu className="h-6 w-6" />
             </Button>
           )}
+          
+          {/* Search Bar */}
+          <div className="hidden md:flex relative">
+            <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 text-slate-400 h-4 w-4" />
+            <Input
+              placeholder="Search cases, notes, or documents..."
+              className="pl-10 w-80 professional-input"
+            />
+          </div>
         </div>
 
-        <div className="flex items-center gap-4">
+        <div className="flex items-center gap-3">
+          {/* Notifications */}
+          <Button
+            variant="ghost"
+            size="icon"
+            className="relative text-slate-400 hover:text-white hover:bg-slate-800/50"
+          >
+            <Bell className="h-5 w-5" />
+            <span className="absolute -top-1 -right-1 h-3 w-3 bg-red-500 rounded-full text-xs flex items-center justify-center text-white">
+              3
+            </span>
+          </Button>
+
+          {/* User Menu */}
           {user && (
-            <Button
-              variant="ghost"
-              size="sm"
-              className="text-gray-400 hover:text-white"
-              onClick={() => logout()}
-            >
-              Sign out
-            </Button>
+            <DropdownMenu>
+              <DropdownMenuTrigger asChild>
+                <Button
+                  variant="ghost"
+                  className="flex items-center gap-3 px-3 py-2 h-auto text-slate-400 hover:text-white hover:bg-slate-800/50"
+                >
+                  <div className="w-8 h-8 rounded-full bg-gradient-to-br from-blue-500 to-cyan-500 flex items-center justify-center text-white font-semibold text-sm">
+                    {user.name.charAt(0).toUpperCase()}
+                  </div>
+                  <div className="hidden md:block text-left">
+                    <p className="text-sm font-medium text-white">{user.name}</p>
+                    <p className="text-xs text-slate-400 capitalize">
+                      {user.role.replace('_', ' ')}
+                    </p>
+                  </div>
+                </Button>
+              </DropdownMenuTrigger>
+              <DropdownMenuContent 
+                align="end" 
+                className="w-56 bg-slate-900/95 backdrop-blur-sm border-slate-700/50"
+              >
+                <DropdownMenuLabel className="text-slate-300">
+                  My Account
+                </DropdownMenuLabel>
+                <DropdownMenuSeparator className="bg-slate-700/50" />
+                <DropdownMenuItem 
+                  className="text-slate-300 hover:bg-slate-800/50 hover:text-white cursor-pointer"
+                  onClick={() => window.location.href = '/profile'}
+                >
+                  <Settings className="mr-2 h-4 w-4" />
+                  Settings
+                </DropdownMenuItem>
+                <DropdownMenuSeparator className="bg-slate-700/50" />
+                <DropdownMenuItem 
+                  className="text-red-400 hover:bg-red-500/10 hover:text-red-300 cursor-pointer"
+                  onClick={logout}
+                >
+                  <LogOut className="mr-2 h-4 w-4" />
+                  Sign out
+                </DropdownMenuItem>
+              </DropdownMenuContent>
+            </DropdownMenu>
           )}
         </div>
       </div>

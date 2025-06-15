@@ -12,6 +12,10 @@ import {
   Scale,
   Building2,
   ChevronRight,
+  Briefcase,
+  Shield,
+  MessageSquare,
+  BarChart3,
 } from 'lucide-react';
 import { cn } from '@/lib/utils';
 
@@ -26,20 +30,20 @@ export function Sidebar({ onClose }: SidebarProps) {
 
   const getNavItems = (role: string) => {
     const baseItems = [
-      { name: 'Dashboard', href: '/', icon: FolderOpen },
-      { name: 'Case Management', href: '/case-management', icon: FileText },
-      { name: 'Case Notes', href: '/case-notes', icon: FileText },
-      { name: 'Compliance Bot', href: '/compliance-bot', icon: Bot },
-      { name: 'History Logs', href: '/history-logs', icon: History },
-      { name: 'Profile', href: '/profile', icon: User },
+      { name: 'Dashboard', href: '/', icon: BarChart3, description: 'Overview & Analytics' },
+      { name: 'Case Management', href: '/case-management', icon: Briefcase, description: 'Manage Legal Cases' },
+      { name: 'Case Notes', href: '/case-notes', icon: FileText, description: 'Document Analysis' },
+      { name: 'Compliance Bot', href: '/compliance-bot', icon: Shield, description: 'Due Diligence Assistant' },
+      { name: 'Chat History', href: '/chat-history', icon: MessageSquare, description: 'Conversation Logs' },
+      { name: 'Profile', href: '/profile', icon: User, description: 'Account Settings' },
     ];
 
     if (role === 'admin') {
-      return [...baseItems, { name: 'User Management', href: '/users', icon: Users }];
+      return [...baseItems, { name: 'User Management', href: '/users', icon: Users, description: 'System Administration' }];
     }
 
     if (role === 'firm') {
-      return [...baseItems, { name: 'Lawyer Management', href: '/firm/lawyers', icon: Users }];
+      return [...baseItems, { name: 'Lawyer Management', href: '/firm/lawyers', icon: Users, description: 'Manage Firm Lawyers' }];
     }
 
     return baseItems;
@@ -53,60 +57,92 @@ export function Sidebar({ onClose }: SidebarProps) {
       animate={{ x: 0 }}
       exit={{ x: -280 }}
       transition={{ duration: 0.3, ease: "easeInOut" }}
-      className="fixed inset-y-0 left-0 w-[280px] bg-gray-900 border-r border-gray-800 flex flex-col shadow-2xl"
+      className="fixed inset-y-0 left-0 w-[280px] glass-card flex flex-col shadow-2xl z-50"
     >
-      <div className="p-6 flex items-center justify-between border-b border-gray-800">
-        <div className="flex items-center gap-2">
-          <Scale className="h-6 w-6 text-cyan-400" />
-          <span className="font-semibold text-lg text-white">Paralegal</span>
+      {/* Header */}
+      <div className="p-6 flex items-center justify-between border-b border-slate-700/50">
+        <div className="flex items-center gap-3">
+          <div className="p-2 bg-gradient-to-br from-blue-500 to-cyan-500 rounded-xl shadow-lg">
+            <Scale className="h-6 w-6 text-white" />
+          </div>
+          <div>
+            <span className="font-bold text-xl text-white font-serif">LegalPro</span>
+            <p className="text-xs text-slate-400 font-medium">Professional Suite</p>
+          </div>
         </div>
         <button
           onClick={onClose}
-          className="p-2 rounded-lg hover:bg-gray-800 transition-colors"
+          className="p-2 rounded-lg hover:bg-slate-800/50 transition-colors duration-200 text-slate-400 hover:text-white"
         >
-          <X className="h-5 w-5 text-gray-400" />
+          <X className="h-5 w-5" />
         </button>
       </div>
 
+      {/* Navigation */}
       <nav className="flex-1 overflow-y-auto py-6">
-        <div className="px-3 space-y-1">
-          {navItems.map((item) => {
+        <div className="px-3 space-y-2">
+          {navItems.map((item, index) => {
             const isActive = pathname === item.href;
             return (
-              <button
+              <motion.button
                 key={item.name}
+                initial={{ opacity: 0, x: -20 }}
+                animate={{ opacity: 1, x: 0 }}
+                transition={{ delay: index * 0.1 }}
                 onClick={() => router.push(item.href)}
                 className={cn(
-                  "w-full flex items-center gap-3 px-4 py-3 text-sm font-medium rounded-lg transition-all duration-200",
-                  isActive
-                    ? "bg-cyan-500/10 text-cyan-400"
-                    : "text-gray-400 hover:bg-gray-800 hover:text-white"
+                  "sidebar-item w-full group",
+                  isActive && "active"
                 )}
               >
-                <item.icon className="h-5 w-5" />
-                <span>{item.name}</span>
+                <div className="flex items-center gap-3 flex-1">
+                  <div className={cn(
+                    "p-2 rounded-lg transition-all duration-200",
+                    isActive 
+                      ? "bg-blue-500/20 text-blue-400" 
+                      : "bg-slate-800/30 text-slate-400 group-hover:bg-slate-700/50 group-hover:text-white"
+                  )}>
+                    <item.icon className="h-4 w-4" />
+                  </div>
+                  <div className="flex-1 text-left">
+                    <p className="font-medium">{item.name}</p>
+                    <p className="text-xs text-slate-500 group-hover:text-slate-400 transition-colors">
+                      {item.description}
+                    </p>
+                  </div>
+                </div>
                 {isActive && (
-                  <ChevronRight className="ml-auto h-4 w-4" />
+                  <motion.div
+                    initial={{ scale: 0 }}
+                    animate={{ scale: 1 }}
+                    className="p-1 rounded-full bg-blue-500/20"
+                  >
+                    <ChevronRight className="h-3 w-3 text-blue-400" />
+                  </motion.div>
                 )}
-              </button>
+              </motion.button>
             );
           })}
         </div>
       </nav>
 
+      {/* User Profile */}
       {user && (
-        <div className="p-4 border-t border-gray-800">
-          <div className="flex items-center gap-3 px-3 py-2 rounded-lg bg-gray-800/50">
-            <div className="p-2 rounded-full bg-gray-700">
-              <User className="h-4 w-4 text-gray-300" />
+        <div className="p-4 border-t border-slate-700/50">
+          <div className="flex items-center gap-3 p-3 rounded-xl bg-gradient-to-r from-slate-800/50 to-slate-700/50 border border-slate-600/30">
+            <div className="p-2 rounded-full bg-gradient-to-br from-blue-500 to-cyan-500 shadow-lg">
+              <User className="h-4 w-4 text-white" />
             </div>
             <div className="flex-1 min-w-0">
-              <p className="text-sm font-medium text-white truncate">
+              <p className="text-sm font-semibold text-white truncate">
                 {user.name}
               </p>
-              <p className="text-xs text-gray-400 truncate">
-                {user.role.replace('_', ' ').charAt(0).toUpperCase() + user.role.slice(1)}
-              </p>
+              <div className="flex items-center gap-2">
+                <div className="w-2 h-2 rounded-full bg-emerald-400 animate-pulse"></div>
+                <p className="text-xs text-slate-400 truncate capitalize">
+                  {user.role.replace('_', ' ')}
+                </p>
+              </div>
             </div>
           </div>
         </div>

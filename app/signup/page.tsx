@@ -8,16 +8,32 @@ import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { useToast } from '@/components/ui/use-toast';
-import { Scale, Gavel, Mail, Lock, User, Briefcase } from 'lucide-react';
+import { Scale, Gavel, Mail, Lock, User, Briefcase, Eye, EyeOff, Shield, CheckCircle } from 'lucide-react';
+import { motion } from 'framer-motion';
 
 export default function SignupPage() {
   const [name, setName] = useState('');
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
+  const [showPassword, setShowPassword] = useState(false);
   const [role, setRole] = useState<'legal_researcher' | 'lawyer' | 'judge' | 'legal_professional'>('legal_researcher');
   const [isLoading, setIsLoading] = useState(false);
   const router = useRouter();
   const { toast } = useToast();
+
+  const getPasswordStrength = (password: string) => {
+    let strength = 0;
+    if (password.length >= 8) strength++;
+    if (/[A-Z]/.test(password)) strength++;
+    if (/[a-z]/.test(password)) strength++;
+    if (/\d/.test(password)) strength++;
+    if (/[^A-Za-z0-9]/.test(password)) strength++;
+    return strength;
+  };
+
+  const passwordStrength = getPasswordStrength(password);
+  const strengthColors = ['bg-red-500', 'bg-orange-500', 'bg-yellow-500', 'bg-blue-500', 'bg-green-500'];
+  const strengthLabels = ['Very Weak', 'Weak', 'Fair', 'Good', 'Strong'];
 
   const validateForm = useCallback(() => {
     if (!name.trim()) {
@@ -110,7 +126,7 @@ export default function SignupPage() {
       }
 
       toast({
-        title: 'Signup successful',
+        title: 'Account created successfully!',
         description: 'Please log in with your new account.',
       });
       router.push('/login');
@@ -135,101 +151,230 @@ export default function SignupPage() {
     }
   };
 
+  const roleOptions = [
+    { value: 'legal_researcher', label: 'Legal Researcher', description: 'Research and analysis specialist' },
+    { value: 'lawyer', label: 'Lawyer', description: 'Licensed legal practitioner' },
+    { value: 'judge', label: 'Judge', description: 'Judicial officer' },
+    { value: 'legal_professional', label: 'Legal Professional', description: 'General legal professional' },
+  ];
+
   return (
-    <div className="min-h-screen bg-gradient-to-br from-gray-900 via-blue-900 to-purple-900 flex items-center justify-center p-4">
-      <div className="w-full max-w-md">
+    <div className="min-h-screen flex items-center justify-center p-4 relative overflow-hidden">
+      {/* Background Pattern */}
+      <div className="absolute inset-0 opacity-20">
+        <div className="absolute inset-0 bg-[radial-gradient(circle_at_30%_20%,rgba(59,130,246,0.1),transparent_50%)]" />
+        <div className="absolute inset-0 bg-[radial-gradient(circle_at_70%_80%,rgba(6,182,212,0.1),transparent_50%)]" />
+        <div className="absolute inset-0 bg-[linear-gradient(45deg,transparent_25%,rgba(59,130,246,0.05)_50%,transparent_75%)]" />
+      </div>
+
+      <motion.div
+        initial={{ opacity: 0, y: 20 }}
+        animate={{ opacity: 1, y: 0 }}
+        transition={{ duration: 0.6 }}
+        className="w-full max-w-md relative z-10"
+      >
+        {/* Header */}
         <div className="text-center mb-8">
-          <div className="flex justify-center items-center gap-4 mb-6">
-            <Scale className="w-10 h-10 text-cyan-400" />
-            <Gavel className="w-10 h-10 text-cyan-400" />
-          </div>
-          <h1 className="text-3xl font-bold text-white mb-2">Create Account</h1>
-          <p className="text-gray-400">Enter your details to get started</p>
+          <motion.div
+            initial={{ scale: 0.8, opacity: 0 }}
+            animate={{ scale: 1, opacity: 1 }}
+            transition={{ delay: 0.2, duration: 0.5 }}
+            className="flex justify-center items-center gap-4 mb-6"
+          >
+            <div className="p-3 bg-gradient-to-br from-blue-500 to-cyan-500 rounded-xl shadow-lg">
+              <Scale className="w-8 h-8 text-white" />
+            </div>
+            <div className="p-3 bg-gradient-to-br from-cyan-500 to-blue-500 rounded-xl shadow-lg">
+              <Gavel className="w-8 h-8 text-white" />
+            </div>
+          </motion.div>
+          <motion.div
+            initial={{ y: 20, opacity: 0 }}
+            animate={{ y: 0, opacity: 1 }}
+            transition={{ delay: 0.4, duration: 0.5 }}
+          >
+            <h1 className="text-4xl font-bold text-white font-serif mb-2">
+              Join LegalPro
+            </h1>
+            <p className="text-slate-400 text-lg">Create your professional account</p>
+          </motion.div>
         </div>
 
-        <form onSubmit={handleSubmit} className="space-y-6">
-          <div className="space-y-4">
-            <div className="relative">
-              <User className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400 h-5 w-5" />
-              <Input
-                type="text"
-                placeholder="Full name"
-                value={name}
-                onChange={(e) => setName(e.target.value)}
-                required
-                disabled={isLoading}
-                className="pl-10 bg-gray-800 border-gray-700 text-white placeholder:text-gray-500"
-              />
+        {/* Signup Form */}
+        <motion.div
+          initial={{ y: 20, opacity: 0 }}
+          animate={{ y: 0, opacity: 1 }}
+          transition={{ delay: 0.6, duration: 0.5 }}
+          className="glass-card p-8 rounded-2xl"
+        >
+          <form onSubmit={handleSubmit} className="space-y-6">
+            <div className="space-y-4">
+              <div className="space-y-2">
+                <label className="text-sm font-medium text-slate-300">Full Name</label>
+                <div className="relative">
+                  <User className="absolute left-3 top-1/2 transform -translate-y-1/2 text-slate-400 h-5 w-5" />
+                  <Input
+                    type="text"
+                    placeholder="Enter your full name"
+                    value={name}
+                    onChange={(e) => setName(e.target.value)}
+                    required
+                    disabled={isLoading}
+                    className="pl-10 professional-input h-12"
+                  />
+                </div>
+              </div>
+              
+              <div className="space-y-2">
+                <label className="text-sm font-medium text-slate-300">Email Address</label>
+                <div className="relative">
+                  <Mail className="absolute left-3 top-1/2 transform -translate-y-1/2 text-slate-400 h-5 w-5" />
+                  <Input
+                    type="email"
+                    placeholder="Enter your email"
+                    value={email}
+                    onChange={(e) => setEmail(e.target.value)}
+                    required
+                    disabled={isLoading}
+                    className="pl-10 professional-input h-12"
+                  />
+                </div>
+              </div>
+              
+              <div className="space-y-2">
+                <label className="text-sm font-medium text-slate-300">Password</label>
+                <div className="relative">
+                  <Lock className="absolute left-3 top-1/2 transform -translate-y-1/2 text-slate-400 h-5 w-5" />
+                  <Input
+                    type={showPassword ? "text" : "password"}
+                    placeholder="Create a strong password"
+                    value={password}
+                    onChange={(e) => setPassword(e.target.value)}
+                    required
+                    disabled={isLoading}
+                    className="pl-10 pr-10 professional-input h-12"
+                  />
+                  <button
+                    type="button"
+                    onClick={() => setShowPassword(!showPassword)}
+                    className="absolute right-3 top-1/2 transform -translate-y-1/2 text-slate-400 hover:text-white transition-colors"
+                  >
+                    {showPassword ? <EyeOff className="h-5 w-5" /> : <Eye className="h-5 w-5" />}
+                  </button>
+                </div>
+                
+                {/* Password Strength Indicator */}
+                {password && (
+                  <div className="space-y-2">
+                    <div className="flex gap-1">
+                      {[...Array(5)].map((_, i) => (
+                        <div
+                          key={i}
+                          className={`h-1 flex-1 rounded-full transition-colors ${
+                            i < passwordStrength ? strengthColors[passwordStrength - 1] : 'bg-slate-700'
+                          }`}
+                        />
+                      ))}
+                    </div>
+                    <p className="text-xs text-slate-400">
+                      Password strength: <span className={`font-medium ${passwordStrength >= 3 ? 'text-green-400' : 'text-yellow-400'}`}>
+                        {strengthLabels[passwordStrength - 1] || 'Very Weak'}
+                      </span>
+                    </p>
+                  </div>
+                )}
+              </div>
+              
+              <div className="space-y-2">
+                <label className="text-sm font-medium text-slate-300">Professional Role</label>
+                <div className="relative">
+                  <Briefcase className="absolute left-3 top-1/2 transform -translate-y-1/2 text-slate-400 h-5 w-5 z-10" />
+                  <Select 
+                    value={role}
+                    onValueChange={(value: 'legal_researcher' | 'lawyer' | 'judge' | 'legal_professional') => setRole(value)}
+                    disabled={isLoading}
+                  >
+                    <SelectTrigger className="pl-10 professional-input h-12">
+                      <SelectValue placeholder="Select your role" />
+                    </SelectTrigger>
+                    <SelectContent className="bg-slate-900/95 backdrop-blur-sm border-slate-700/50">
+                      {roleOptions.map((option) => (
+                        <SelectItem 
+                          key={option.value} 
+                          value={option.value} 
+                          className="text-white hover:bg-slate-800/50"
+                        >
+                          <div>
+                            <div className="font-medium">{option.label}</div>
+                            <div className="text-xs text-slate-400">{option.description}</div>
+                          </div>
+                        </SelectItem>
+                      ))}
+                    </SelectContent>
+                  </Select>
+                </div>
+              </div>
             </div>
-            <div className="relative">
-              <Mail className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400 h-5 w-5" />
-              <Input
-                type="email"
-                placeholder="Email address"
-                value={email}
-                onChange={(e) => setEmail(e.target.value)}
-                required
-                disabled={isLoading}
-                className="pl-10 bg-gray-800 border-gray-700 text-white placeholder:text-gray-500"
-              />
+
+            {/* Password Requirements */}
+            <div className="space-y-3 p-4 bg-slate-800/30 rounded-xl border border-slate-700/30">
+              <p className="text-sm font-medium text-slate-300">Password requirements:</p>
+              <div className="grid grid-cols-1 gap-2 text-xs">
+                {[
+                  { check: password.length >= 8, text: 'At least 8 characters' },
+                  { check: /[A-Z]/.test(password), text: 'One uppercase letter' },
+                  { check: /[a-z]/.test(password), text: 'One lowercase letter' },
+                  { check: /\d/.test(password), text: 'One number' },
+                ].map((req, index) => (
+                  <div key={index} className="flex items-center gap-2">
+                    <CheckCircle className={`h-3 w-3 ${req.check ? 'text-green-400' : 'text-slate-500'}`} />
+                    <span className={req.check ? 'text-green-400' : 'text-slate-400'}>
+                      {req.text}
+                    </span>
+                  </div>
+                ))}
+              </div>
             </div>
-            <div className="relative">
-              <Lock className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400 h-5 w-5" />
-              <Input
-                type="password"
-                placeholder="Password"
-                value={password}
-                onChange={(e) => setPassword(e.target.value)}
-                required
-                disabled={isLoading}
-                className="pl-10 bg-gray-800 border-gray-700 text-white placeholder:text-gray-500"
-              />
-            </div>
-            <div className="relative">
-              <Briefcase className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400 h-5 w-5" />
-              <Select 
-                value={role}
-                onValueChange={(value: 'legal_researcher' | 'lawyer' | 'judge' | 'legal_professional') => setRole(value)}
-                disabled={isLoading}
-              >
-                <SelectTrigger className="w-full pl-10 bg-gray-800 border-gray-700 text-white">
-                  <SelectValue placeholder="Select your role" />
-                </SelectTrigger>
-                <SelectContent className="bg-gray-800 border-gray-700 text-white">
-                  <SelectItem value="legal_researcher" className="text-white">Legal Researcher</SelectItem>
-                  <SelectItem value="lawyer" className="text-white">Lawyer</SelectItem>
-                  <SelectItem value="judge" className="text-white">Judge</SelectItem>
-                  <SelectItem value="legal_professional" className="text-white">Legal Professional</SelectItem>
-                </SelectContent>
-              </Select>
-            </div>
+
+            <Button
+              type="submit"
+              disabled={isLoading || passwordStrength < 3}
+              className="w-full professional-button h-12 text-white font-semibold"
+            >
+              {isLoading ? (
+                <div className="flex items-center gap-2">
+                  <div className="w-4 h-4 border-2 border-white/30 border-t-white rounded-full animate-spin" />
+                  Creating account...
+                </div>
+              ) : (
+                'Create Account'
+              )}
+            </Button>
+          </form>
+
+          <div className="mt-8 pt-6 border-t border-slate-700/50 text-center">
+            <p className="text-slate-400">
+              Already have an account?{' '}
+              <Link href="/login" className="text-blue-400 hover:text-blue-300 transition-colors font-medium">
+                Sign in
+              </Link>
+            </p>
           </div>
+        </motion.div>
 
-          <div className="text-xs text-gray-400 space-y-1">
-            <p>Password requirements:</p>
-            <ul className="list-disc list-inside space-y-1">
-              <li>At least 8 characters long</li>
-              <li>Contains uppercase and lowercase letters</li>
-              <li>Contains at least one number</li>
-            </ul>
+        {/* Security Notice */}
+        <motion.div
+          initial={{ opacity: 0 }}
+          animate={{ opacity: 1 }}
+          transition={{ delay: 0.8, duration: 0.5 }}
+          className="mt-6 text-center"
+        >
+          <div className="flex items-center justify-center gap-2 text-slate-500 text-sm">
+            <Shield className="h-4 w-4" />
+            <span>Your data is protected with enterprise-grade security</span>
           </div>
-
-          <Button
-            type="submit"
-            disabled={isLoading}
-            className="w-full bg-gradient-to-r from-cyan-500 to-blue-500 hover:from-cyan-600 hover:to-blue-600 text-white py-2 rounded-lg transition-all duration-200 disabled:opacity-50"
-          >
-            {isLoading ? 'Creating account...' : 'Create Account'}
-          </Button>
-        </form>
-
-        <p className="mt-6 text-center text-gray-400">
-          Already have an account?{' '}
-          <Link href="/login" className="text-cyan-400 hover:text-cyan-300 transition-colors">
-            Sign in
-          </Link>
-        </p>
-      </div>
+        </motion.div>
+      </motion.div>
     </div>
   );
 }

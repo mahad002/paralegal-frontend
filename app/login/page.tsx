@@ -6,12 +6,14 @@ import Link from 'next/link';
 import { useAuth } from '@/contexts/AuthContext';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
-import { Scale, Gavel, Mail, Lock } from 'lucide-react';
+import { Scale, Gavel, Mail, Lock, Eye, EyeOff, Shield } from 'lucide-react';
 import { useToast } from "@/components/ui/use-toast"
+import { motion } from 'framer-motion';
 
 export default function LoginPage() {
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
+  const [showPassword, setShowPassword] = useState(false);
   const [error, setError] = useState('');
   const [isSubmitting, setIsSubmitting] = useState(false);
   const { login, isLoading } = useAuth();
@@ -88,76 +90,161 @@ export default function LoginPage() {
   }
 
   return (
-    <div className="min-h-screen bg-gradient-to-br from-gray-900 via-blue-900 to-purple-900 flex items-center justify-center p-4">
-      <div className="w-full max-w-md">
+    <div className="min-h-screen flex items-center justify-center p-4 relative overflow-hidden">
+      {/* Background Pattern */}
+      <div className="absolute inset-0 opacity-20">
+        <div className="absolute inset-0 bg-[radial-gradient(circle_at_30%_20%,rgba(59,130,246,0.1),transparent_50%)]" />
+        <div className="absolute inset-0 bg-[radial-gradient(circle_at_70%_80%,rgba(6,182,212,0.1),transparent_50%)]" />
+        <div className="absolute inset-0 bg-[linear-gradient(45deg,transparent_25%,rgba(59,130,246,0.05)_50%,transparent_75%)]" />
+      </div>
+
+      <motion.div
+        initial={{ opacity: 0, y: 20 }}
+        animate={{ opacity: 1, y: 0 }}
+        transition={{ duration: 0.6 }}
+        className="w-full max-w-md relative z-10"
+      >
+        {/* Header */}
         <div className="text-center mb-8">
-          <div className="flex justify-center items-center gap-4 mb-6">
-            <Scale className="w-10 h-10 text-cyan-400" />
-            <Gavel className="w-10 h-10 text-cyan-400" />
-          </div>
-          <h1 className="text-3xl font-bold text-white mb-2">Welcome back</h1>
-          <p className="text-gray-400">Sign in to your account to continue</p>
+          <motion.div
+            initial={{ scale: 0.8, opacity: 0 }}
+            animate={{ scale: 1, opacity: 1 }}
+            transition={{ delay: 0.2, duration: 0.5 }}
+            className="flex justify-center items-center gap-4 mb-6"
+          >
+            <div className="p-3 bg-gradient-to-br from-blue-500 to-cyan-500 rounded-xl shadow-lg">
+              <Scale className="w-8 h-8 text-white" />
+            </div>
+            <div className="p-3 bg-gradient-to-br from-cyan-500 to-blue-500 rounded-xl shadow-lg">
+              <Gavel className="w-8 h-8 text-white" />
+            </div>
+          </motion.div>
+          <motion.div
+            initial={{ y: 20, opacity: 0 }}
+            animate={{ y: 0, opacity: 1 }}
+            transition={{ delay: 0.4, duration: 0.5 }}
+          >
+            <h1 className="text-4xl font-bold text-white font-serif mb-2">
+              Welcome Back
+            </h1>
+            <p className="text-slate-400 text-lg">Sign in to your professional account</p>
+          </motion.div>
         </div>
 
-        {error && (
-          <div className="mb-6 p-4 bg-red-500/10 border border-red-500/20 rounded-lg">
-            <p className="text-red-500 text-sm text-center">{error}</p>
-          </div>
-        )}
-
-        <form onSubmit={handleSubmit} className="space-y-6">
-          <div className="space-y-4">
-            <div className="relative">
-              <Mail className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400 h-5 w-5" />
-              <Input
-                type="email"
-                placeholder="Email address"
-                value={email}
-                onChange={(e) => setEmail(e.target.value)}
-                required
-                disabled={isSubmitting || isLoading}
-                className="pl-10 bg-gray-800 border-gray-700 text-white placeholder:text-gray-500"
-              />
-            </div>
-            <div className="relative">
-              <Lock className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400 h-5 w-5" />
-              <Input
-                type="password"
-                placeholder="Password"
-                value={password}
-                onChange={(e) => setPassword(e.target.value)}
-                required
-                disabled={isSubmitting || isLoading}
-                className="pl-10 bg-gray-800 border-gray-700 text-white placeholder:text-gray-500"
-              />
-            </div>
-          </div>
-
-          <div className="flex items-center justify-between text-sm">
-            <Link 
-              href="/forgot-password" 
-              className="text-cyan-400 hover:text-cyan-300 transition-colors"
+        {/* Login Form */}
+        <motion.div
+          initial={{ y: 20, opacity: 0 }}
+          animate={{ y: 0, opacity: 1 }}
+          transition={{ delay: 0.6, duration: 0.5 }}
+          className="glass-card p-8 rounded-2xl"
+        >
+          {error && (
+            <motion.div
+              initial={{ opacity: 0, scale: 0.95 }}
+              animate={{ opacity: 1, scale: 1 }}
+              className="mb-6 p-4 bg-red-500/10 border border-red-500/20 rounded-xl"
             >
-              Forgot your password?
-            </Link>
+              <div className="flex items-center gap-2">
+                <Shield className="h-4 w-4 text-red-400" />
+                <p className="text-red-400 text-sm">{error}</p>
+              </div>
+            </motion.div>
+          )}
+
+          <form onSubmit={handleSubmit} className="space-y-6">
+            <div className="space-y-4">
+              <div className="space-y-2">
+                <label className="text-sm font-medium text-slate-300">Email Address</label>
+                <div className="relative">
+                  <Mail className="absolute left-3 top-1/2 transform -translate-y-1/2 text-slate-400 h-5 w-5" />
+                  <Input
+                    type="email"
+                    placeholder="Enter your email"
+                    value={email}
+                    onChange={(e) => setEmail(e.target.value)}
+                    required
+                    disabled={isSubmitting || isLoading}
+                    className="pl-10 professional-input h-12"
+                  />
+                </div>
+              </div>
+              
+              <div className="space-y-2">
+                <label className="text-sm font-medium text-slate-300">Password</label>
+                <div className="relative">
+                  <Lock className="absolute left-3 top-1/2 transform -translate-y-1/2 text-slate-400 h-5 w-5" />
+                  <Input
+                    type={showPassword ? "text" : "password"}
+                    placeholder="Enter your password"
+                    value={password}
+                    onChange={(e) => setPassword(e.target.value)}
+                    required
+                    disabled={isSubmitting || isLoading}
+                    className="pl-10 pr-10 professional-input h-12"
+                  />
+                  <button
+                    type="button"
+                    onClick={() => setShowPassword(!showPassword)}
+                    className="absolute right-3 top-1/2 transform -translate-y-1/2 text-slate-400 hover:text-white transition-colors"
+                  >
+                    {showPassword ? <EyeOff className="h-5 w-5" /> : <Eye className="h-5 w-5" />}
+                  </button>
+                </div>
+              </div>
+            </div>
+
+            <div className="flex items-center justify-between text-sm">
+              <label className="flex items-center gap-2 text-slate-400">
+                <input type="checkbox" className="rounded border-slate-600 bg-slate-800" />
+                Remember me
+              </label>
+              <Link 
+                href="/forgot-password" 
+                className="text-blue-400 hover:text-blue-300 transition-colors font-medium"
+              >
+                Forgot password?
+              </Link>
+            </div>
+
+            <Button
+              type="submit"
+              disabled={isSubmitting || isLoading}
+              className="w-full professional-button h-12 text-white font-semibold"
+            >
+              {isSubmitting || isLoading ? (
+                <div className="flex items-center gap-2">
+                  <div className="w-4 h-4 border-2 border-white/30 border-t-white rounded-full animate-spin" />
+                  Signing in...
+                </div>
+              ) : (
+                'Sign In'
+              )}
+            </Button>
+          </form>
+
+          <div className="mt-8 pt-6 border-t border-slate-700/50 text-center">
+            <p className="text-slate-400">
+              Don't have an account?{' '}
+              <Link href="/signup" className="text-blue-400 hover:text-blue-300 transition-colors font-medium">
+                Create one now
+              </Link>
+            </p>
           </div>
+        </motion.div>
 
-          <Button
-            type="submit"
-            disabled={isSubmitting || isLoading}
-            className="w-full bg-gradient-to-r from-cyan-500 to-blue-500 hover:from-cyan-600 hover:to-blue-600 text-white py-2 rounded-lg transition-all duration-200 disabled:opacity-50"
-          >
-            {isSubmitting || isLoading ? 'Signing in...' : 'Sign in'}
-          </Button>
-        </form>
-
-        <p className="mt-6 text-center text-gray-400">
-          Don't have an account?{' '}
-          <Link href="/signup" className="text-cyan-400 hover:text-cyan-300 transition-colors">
-            Create one now
-          </Link>
-        </p>
-      </div>
+        {/* Security Notice */}
+        <motion.div
+          initial={{ opacity: 0 }}
+          animate={{ opacity: 1 }}
+          transition={{ delay: 0.8, duration: 0.5 }}
+          className="mt-6 text-center"
+        >
+          <div className="flex items-center justify-center gap-2 text-slate-500 text-sm">
+            <Shield className="h-4 w-4" />
+            <span>Secured with enterprise-grade encryption</span>
+          </div>
+        </motion.div>
+      </motion.div>
     </div>
   );
 }
