@@ -1,281 +1,189 @@
 'use client';
 
-import { useState } from 'react';
+import { useState, useCallback } from 'react';
+import Image from 'next/image';
 import { useRouter } from 'next/navigation';
 import Link from 'next/link';
 import * as UserAPI from '@/lib/api/User';
-import { ModernButton } from '@/components/ui/modern-button';
-import { ModernInput } from '@/components/ui/modern-input';
-import { ModernSelect } from '@/components/ui/modern-select';
-import { useNotification } from '@/components/ui/notification-manager';
-import { Scale, Mail, Lock, User, Briefcase, Eye, EyeOff } from 'lucide-react';
-import { motion } from 'framer-motion';
-import type { User as UserType } from '@/types';
+import { Button } from '@/components/ui/button';
+import { Input } from '@/components/ui/input';
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
+import { useToast } from '@/components/ui/use-toast';
+import { Scale, Gavel, Mail, Lock, User, Briefcase } from 'lucide-react';
 
 export default function SignupPage() {
-  const [formData, setFormData] = useState({
-    name: '',
-    email: '',
-    password: '',
-    confirmPassword: '',
-    role: 'legal_researcher' as UserType['role']
-  });
-  const [showPassword, setShowPassword] = useState(false);
-  const [showConfirmPassword, setShowConfirmPassword] = useState(false);
+  const [name, setName] = useState('');
+  const [email, setEmail] = useState('');
+  const [password, setPassword] = useState('');
+  const [role, setRole] = useState<'legal_researcher' | 'lawyer' | 'judge' | 'legal_professional'>('legal_researcher');
   const [isLoading, setIsLoading] = useState(false);
   const router = useRouter();
-  const { addNotification } = useNotification();
+  const { toast } = useToast();
 
-  const validateForm = () => {
-    if (!formData.name.trim()) {
-      addNotification({
-        type: 'warning',
-        title: 'Name Required',
-        message: 'Please enter your full name',
-        duration: 5000
+  const validateForm = useCallback(() => {
+    if (!name.trim()) {
+      toast({
+        title: 'Error',
+        description: 'Please enter your name',
+        variant: 'destructive',
       });
       return false;
     }
 
-    if (!formData.email.trim()) {
-      addNotification({
-        type: 'warning',
-        title: 'Email Required',
-        message: 'Please enter your email address',
-        duration: 5000
+    if (!email.trim()) {
+      toast({
+        title: 'Error',
+        description: 'Please enter your email',
+        variant: 'destructive',
       });
       return false;
     }
 
-    if (!formData.password.trim()) {
-      addNotification({
-        type: 'warning',
-        title: 'Password Required',
-        message: 'Please enter a password',
-        duration: 5000
+    if (!password.trim()) {
+      toast({
+        title: 'Error',
+        description: 'Please enter a password',
+        variant: 'destructive',
       });
       return false;
     }
 
-    if (formData.password.length < 8) {
-      addNotification({
-        type: 'warning',
-        title: 'Password Too Short',
-        message: 'Password must be at least 8 characters long',
-        duration: 5000
-      });
-      return false;
-    }
-
-    if (formData.password !== formData.confirmPassword) {
-      addNotification({
-        type: 'warning',
-        title: 'Passwords Don\'t Match',
-        message: 'Please make sure both passwords match',
-        duration: 5000
+    if (password.length < 8) {
+      toast({
+        title: 'Error',
+        description: 'Password must be at least 8 characters long',
+        variant: 'destructive',
       });
       return false;
     }
 
     return true;
-  };
+  }, [name, email, password, toast]);
 
   const handleSubmit = async (e: React.FormEvent<HTMLFormElement>) => {
     e.preventDefault();
     
-    if (!validateForm()) return;
-    
     setIsLoading(true);
     
+    if (!validateForm()) {
+      setIsLoading(false);
+      return;
+    }
+
     try {
-      const response = await UserAPI.signup(
-        formData.name,
-        formData.email,
-        formData.password,
-        formData.role
-      );
+      const response = await UserAPI.signup(name, email, password, role);
       
       if ('error' in response) {
         throw new Error(response.error);
       }
 
-      addNotification({
-        type: 'success',
-        title: 'Account Created!',
-        message: 'Please log in with your new account.',
-        duration: 5000
+      toast({
+        title: 'Signup successful',
+        description: 'Please log in with your new account.',
       });
-      
       router.push('/login');
     } catch (error) {
+      setIsLoading(false);
       let errorMessage = 'An error occurred during signup.';
       
       if (error instanceof Error) {
         errorMessage = error.message;
       }
 
-      addNotification({
-        type: 'error',
-        title: 'Signup Failed',
-        message: errorMessage,
-        duration: 8000
+      toast({
+        title: 'Signup failed',
+        description: errorMessage,
+        variant: 'destructive',
       });
-    } finally {
-      setIsLoading(false);
     }
   };
 
-  const handleInputChange = (field: string, value: string) => {
-    setFormData(prev => ({ ...prev, [field]: value }));
-  };
-
   return (
-    <div className="min-h-screen bg-gradient-to-br from-gray-950 via-blue-950/20 to-purple-950/20 flex items-center justify-center p-4">
-      <motion.div
-        initial={{ opacity: 0, y: 20 }}
-        animate={{ opacity: 1, y: 0 }}
-        transition={{ duration: 0.5 }}
-        className="w-full max-w-md"
-      >
-        {/* Header */}
+    <div className="min-h-screen bg-gradient-to-br from-gray-900 via-blue-900 to-purple-900 flex items-center justify-center p-4">
+      <div className="w-full max-w-md">
         <div className="text-center mb-8">
-          <motion.div
-            initial={{ scale: 0.8, opacity: 0 }}
-            animate={{ scale: 1, opacity: 1 }}
-            transition={{ delay: 0.2, duration: 0.5 }}
-            className="flex justify-center items-center gap-4 mb-6"
-          >
-            <div className="w-16 h-16 bg-gradient-to-r from-blue-600 to-purple-600 rounded-2xl flex items-center justify-center shadow-2xl">
-              <Scale className="w-8 h-8 text-white" />
-            </div>
-          </motion.div>
-          <motion.h1
-            initial={{ opacity: 0 }}
-            animate={{ opacity: 1 }}
-            transition={{ delay: 0.3 }}
-            className="text-3xl font-bold text-white mb-2"
-          >
-            Create Account
-          </motion.h1>
-          <motion.p
-            initial={{ opacity: 0 }}
-            animate={{ opacity: 1 }}
-            transition={{ delay: 0.4 }}
-            className="text-gray-400"
-          >
-            Join our platform to get started
-          </motion.p>
+          <div className="flex justify-center items-center gap-4 mb-6">
+            <Scale className="w-10 h-10 text-cyan-400" />
+            <Gavel className="w-10 h-10 text-cyan-400" />
+          </div>
+          <h1 className="text-3xl font-bold text-white mb-2">Create Account</h1>
+          <p className="text-gray-400">Enter your details to get started</p>
         </div>
 
-        {/* Form */}
-        <motion.div
-          initial={{ opacity: 0, y: 20 }}
-          animate={{ opacity: 1, y: 0 }}
-          transition={{ delay: 0.5 }}
-          className="bg-gray-900/50 backdrop-blur-md border border-gray-800 rounded-2xl p-8 shadow-2xl"
-        >
-          <form onSubmit={handleSubmit} className="space-y-6">
-            <ModernInput
-              type="text"
-              label="Full Name"
-              placeholder="Enter your full name"
-              value={formData.name}
-              onChange={(e) => handleInputChange('name', e.target.value)}
-              icon={<User className="h-4 w-4" />}
-              required
-            />
-
-            <ModernInput
-              type="email"
-              label="Email Address"
-              placeholder="Enter your email"
-              value={formData.email}
-              onChange={(e) => handleInputChange('email', e.target.value)}
-              icon={<Mail className="h-4 w-4" />}
-              required
-            />
-
+        <form onSubmit={handleSubmit} className="space-y-6">
+          <div className="space-y-4">
             <div className="relative">
-              <ModernInput
-                type={showPassword ? 'text' : 'password'}
-                label="Password"
-                placeholder="Enter your password"
-                value={formData.password}
-                onChange={(e) => handleInputChange('password', e.target.value)}
-                icon={<Lock className="h-4 w-4" />}
-                helperText="Must be at least 8 characters long"
+              <User className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400 h-5 w-5" />
+              <Input
+                type="text"
+                placeholder="Full name"
+                value={name}
+                onChange={(e) => setName(e.target.value)}
                 required
+                className="pl-10 bg-gray-800 border-gray-700 text-white placeholder:text-gray-500"
               />
-              <button
-                type="button"
-                onClick={() => setShowPassword(!showPassword)}
-                className="absolute right-3 top-9 text-gray-400 hover:text-gray-300 transition-colors"
-              >
-                {showPassword ? <EyeOff className="h-4 w-4" /> : <Eye className="h-4 w-4" />}
-              </button>
             </div>
-
             <div className="relative">
-              <ModernInput
-                type={showConfirmPassword ? 'text' : 'password'}
-                label="Confirm Password"
-                placeholder="Confirm your password"
-                value={formData.confirmPassword}
-                onChange={(e) => handleInputChange('confirmPassword', e.target.value)}
-                icon={<Lock className="h-4 w-4" />}
+              <Mail className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400 h-5 w-5" />
+              <Input
+                type="email"
+                placeholder="Email address"
+                value={email}
+                onChange={(e) => setEmail(e.target.value)}
                 required
+                className="pl-10 bg-gray-800 border-gray-700 text-white placeholder:text-gray-500"
               />
-              <button
-                type="button"
-                onClick={() => setShowConfirmPassword(!showConfirmPassword)}
-                className="absolute right-3 top-9 text-gray-400 hover:text-gray-300 transition-colors"
-              >
-                {showConfirmPassword ? <EyeOff className="h-4 w-4" /> : <Eye className="h-4 w-4" />}
-              </button>
             </div>
-
-            <ModernSelect
-              label="Role"
-              value={formData.role}
-              onChange={(e) => handleInputChange('role', e.target.value as UserType['role'])}
-              required
-            >
-              <option value="legal_researcher">Legal Researcher</option>
-              <option value="lawyer">Lawyer</option>
-              <option value="judge">Judge</option>
-              <option value="legal_professional">Legal Professional</option>
-            </ModernSelect>
-
-            <ModernButton
-              type="submit"
-              loading={isLoading}
-              fullWidth
-              size="lg"
-            >
-              {isLoading ? 'Creating Account...' : 'Create Account'}
-            </ModernButton>
-          </form>
-
-          <div className="mt-6 text-center">
-            <p className="text-gray-400">
-              Already have an account?{' '}
-              <Link href="/login" className="text-blue-400 hover:text-blue-300 transition-colors font-medium">
-                Sign in
-              </Link>
-            </p>
+            <div className="relative">
+              <Lock className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400 h-5 w-5" />
+              <Input
+                type="password"
+                placeholder="Password"
+                value={password}
+                onChange={(e) => setPassword(e.target.value)}
+                required
+                className="pl-10 bg-gray-800 border-gray-700 text-white placeholder:text-gray-500"
+              />
+            </div>
+            <div className="relative">
+              <Briefcase className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400 h-5 w-5" />
+              <Select 
+                value={role}
+                onValueChange={(value: 'legal_researcher' | 'lawyer' | 'judge' | 'legal_professional') => setRole(value)}
+              >
+                <SelectTrigger className="w-full pl-10 bg-gray-800 border-gray-700 text-white">
+                  <SelectValue placeholder="Select your role" />
+                </SelectTrigger>
+                <SelectContent className="bg-gray-800 border-gray-700 text-white">
+                  <SelectItem value="legal_researcher" className="text-white">Legal Researcher</SelectItem>
+                  <SelectItem value="lawyer" className="text-white">Lawyer</SelectItem>
+                  <SelectItem value="judge" className="text-white">Judge</SelectItem>
+                  <SelectItem value="legal_professional" className="text-white">Legal Professional</SelectItem>
+                </SelectContent>
+              </Select>
+            </div>
           </div>
-        </motion.div>
 
-        {/* Footer */}
-        <motion.div
-          initial={{ opacity: 0 }}
-          animate={{ opacity: 1 }}
-          transition={{ delay: 0.6 }}
-          className="text-center mt-8 text-sm text-gray-500"
-        >
-          <p>© 2024 Paralegal Assistant. All rights reserved.</p>
-        </motion.div>
-      </motion.div>
+          <p className="text-xs text-gray-400">
+            Password must be at least 8 characters long
+          </p>
+
+          <Button
+            type="submit"
+            disabled={isLoading}
+            className="w-full bg-gradient-to-r from-cyan-500 to-blue-500 hover:from-cyan-600 hover:to-blue-600 text-white py-2 rounded-lg transition-all duration-200"
+          >
+            {isLoading ? 'Creating account...' : 'Create Account'}
+          </Button>
+        </form>
+
+        <p className="mt-6 text-center text-gray-400">
+          Already have an account?{' '}
+          <Link href="/login" className="text-cyan-400 hover:text-cyan-300 transition-colors">
+            Sign in
+          </Link>
+        </p>
+      </div>
     </div>
   );
 }

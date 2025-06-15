@@ -8,8 +8,8 @@ import './globals.css'
 const inter = Inter({ subsets: ['latin'] })
 
 export const metadata = {
-  title: 'Paralegal Assistant - Professional Legal Case Management',
-  description: 'A modern, professional web application for legal professionals to manage cases, analyze documents, and ensure compliance.',
+  title: 'Paralegal Assistant',
+  description: 'A modern web application for legal professionals',
 }
 
 export default function RootLayout({

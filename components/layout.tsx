@@ -6,7 +6,6 @@ import { motion, AnimatePresence } from 'framer-motion';
 import { usePathname } from 'next/navigation';
 import { Navbar } from './navbar';
 import { Sidebar } from './sidebar';
-import { NotificationProvider } from './ui/notification-manager';
 
 export function Layout({ children }: { children: React.ReactNode }) {
   const [isSidebarOpen, setIsSidebarOpen] = useState(true);
@@ -17,9 +16,8 @@ export function Layout({ children }: { children: React.ReactNode }) {
 
   useEffect(() => {
     const checkMobile = () => {
-      const mobile = window.innerWidth < 1024;
-      setIsMobile(mobile);
-      if (mobile) {
+      setIsMobile(window.innerWidth < 1024);
+      if (window.innerWidth < 1024) {
         setIsSidebarOpen(false);
       }
     };
@@ -40,55 +38,31 @@ export function Layout({ children }: { children: React.ReactNode }) {
   }
 
   if (isAuthPage) {
-    return (
-      <NotificationProvider>
-        {children}
-      </NotificationProvider>
-    );
+    return children;
   }
 
   return (
-    <NotificationProvider>
-      <div className="min-h-screen bg-gray-950 flex">
-        <AnimatePresence mode="wait">
-          {isSidebarOpen && (
-            <motion.div
-              initial={{ width: 0, opacity: 0 }}
-              animate={{ width: 280, opacity: 1 }}
-              exit={{ width: 0, opacity: 0 }}
-              transition={{ duration: 0.2, ease: "easeInOut" }}
-              className="fixed inset-y-0 left-0 z-50 lg:relative lg:z-auto"
-            >
-              <Sidebar onClose={() => setIsSidebarOpen(false)} />
-            </motion.div>
-          )}
-        </AnimatePresence>
-
-        {/* Overlay for mobile */}
-        {isMobile && isSidebarOpen && (
+    <div className="min-h-screen bg-gray-900 flex">
+      <AnimatePresence mode="wait">
+        {isSidebarOpen && (
           <motion.div
-            initial={{ opacity: 0 }}
-            animate={{ opacity: 1 }}
-            exit={{ opacity: 0 }}
-            className="fixed inset-0 bg-black/50 z-40 lg:hidden"
-            onClick={() => setIsSidebarOpen(false)}
-          />
+            initial={{ width: 0, opacity: 0 }}
+            animate={{ width: 280, opacity: 1 }}
+            exit={{ width: 0, opacity: 0 }}
+            transition={{ duration: 0.3, ease: "easeInOut" }}
+            className="fixed inset-y-0 left-0 z-50"
+          >
+            <Sidebar onClose={() => setIsSidebarOpen(false)} />
+          </motion.div>
         )}
+      </AnimatePresence>
 
-        <main className={`flex-1 flex flex-col min-h-screen transition-all duration-200 ${isSidebarOpen && !isMobile ? 'lg:ml-0' : ''}`}>
-          <Navbar onMenuClick={() => setIsSidebarOpen(!isSidebarOpen)} isSidebarOpen={isSidebarOpen} />
-          <div className="flex-1 overflow-auto">
-            <motion.div
-              initial={{ opacity: 0, y: 20 }}
-              animate={{ opacity: 1, y: 0 }}
-              transition={{ duration: 0.3 }}
-              className="p-6"
-            >
-              {children}
-            </motion.div>
-          </div>
-        </main>
-      </div>
-    </NotificationProvider>
-  );
+      <main className={`flex-1 flex flex-col min-h-screen transition-all duration-300 ${isSidebarOpen ? 'lg:ml-[280px]' : ''}`}>
+        <Navbar onMenuClick={() => setIsSidebarOpen(!isSidebarOpen)} isSidebarOpen={isSidebarOpen} />
+        <div className="flex-1 p-4">
+          {children}
+        </div>
+      </main>
+    </div>
+  )
 }
