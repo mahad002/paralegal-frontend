@@ -9,6 +9,7 @@ const nextConfig = {
   eslint: {
     ignoreDuringBuilds: false,
   },
+  swcMinify: false,
 };
 
 export default nextConfig;
