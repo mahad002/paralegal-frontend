@@ -14,18 +14,15 @@
   },
   "plugins": [
     "@typescript-eslint",
-    "react-hooks",
-    "react-refresh"
+    "react-hooks"
   ],
   "rules": {
     "react/no-unescaped-entities": "off",
     "@next/next/no-img-element": "off",
     "@typescript-eslint/no-unused-vars": "warn",
+    "@typescript-eslint/no-explicit-any": "warn",
     "react-hooks/rules-of-hooks": "error",
-    "react-refresh/only-export-components": [
-      "warn",
-      { "allowConstantExport": true }
-    ]
+    "react-hooks/exhaustive-deps": "warn"
   },
   "settings": {
     "react": {
