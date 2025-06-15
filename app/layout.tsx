@@ -1,5 +1,6 @@
 import { Inter } from 'next/font/google'
 import { Layout } from '@/components/layout'
+import { Toaster } from '@/components/ui/toaster'
 import { AuthProvider } from '@/contexts/AuthContext'
 import { SplashProvider } from '@/contexts/SplashContext'
 import './globals.css'
@@ -24,6 +25,7 @@ export default function RootLayout({
             <Layout>
               {children}
             </Layout>
+            <Toaster />
           </SplashProvider>
         </AuthProvider>
       </body>
