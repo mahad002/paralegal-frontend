@@ -42,7 +42,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
     setState(prev => ({ ...prev, error }));
   }, []);
 
-  const login = async (email: string, password: string) => {
+  const login = useCallback(async (email: string, password: string) => {
     setLoading(true);
     clearError();
 
@@ -73,7 +73,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
     } finally {
       setLoading(false);
     }
-  };
+  }, [setLoading, clearError, setUser, setError]);
 
   const logout = useCallback(() => {
     localStorage.removeItem('token');
@@ -82,20 +82,19 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
   }, [setUser, setError]);
 
   const checkAuth = useCallback(async () => {
-    setLoading(true);
-    clearError();
     const token = localStorage.getItem('token');
 
-    try {
-      if (!token) {
-        console.warn('No token found, logging out');
-        setUser(null);
-        setLoading(false);
-        return;
-      }
+    if (!token) {
+      setUser(null);
+      setLoading(false);
+      return;
+    }
 
+    setLoading(true);
+    clearError();
+
+    try {
       const response = await UserAPI.getCurrentUser();
-      console.log('Auth check response:', response);
 
       if ('error' in response) {
         console.error('Error fetching user:', response.error);
@@ -121,7 +120,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
     } finally {
       setLoading(false);
     }
-  }, [logout, setUser, setError, setLoading]);
+  }, [logout, setUser, setError, setLoading, clearError]);
 
   useEffect(() => {
     checkAuth();

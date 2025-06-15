@@ -1,11 +1,9 @@
 'use client'
 
 import { useState, useEffect } from 'react';
-import Image from 'next/image';
 import { useRouter } from 'next/navigation';
 import Link from 'next/link';
 import { useAuth } from '@/contexts/AuthContext';
-import * as UserAPI from '@/lib/api/User';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Scale, Gavel, Mail, Lock } from 'lucide-react';
@@ -15,6 +13,7 @@ export default function LoginPage() {
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
   const [error, setError] = useState('');
+  const [isSubmitting, setIsSubmitting] = useState(false);
   const { login, isLoading } = useAuth();
   const { toast } = useToast();
   const router = useRouter();
@@ -47,10 +46,23 @@ export default function LoginPage() {
       });
       return;
     }
+
+    // Email format validation
+    const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+    if (!emailRegex.test(email)) {
+      toast({
+        title: "Error",
+        description: "Please enter a valid email address",
+        variant: "destructive",
+      });
+      return;
+    }
+    
+    setIsSubmitting(true);
     
     try {
       setError('');
-      await login(email, password);
+      await login(email.trim(), password);
       router.push('/');
     } catch (error) {
       let errorMessage = 'Invalid email or password. Please try again.';
@@ -70,6 +82,8 @@ export default function LoginPage() {
         description: errorMessage,
         variant: "destructive" 
       });
+    } finally {
+      setIsSubmitting(false);
     }
   }
 
@@ -101,6 +115,7 @@ export default function LoginPage() {
                 value={email}
                 onChange={(e) => setEmail(e.target.value)}
                 required
+                disabled={isSubmitting || isLoading}
                 className="pl-10 bg-gray-800 border-gray-700 text-white placeholder:text-gray-500"
               />
             </div>
@@ -112,6 +127,7 @@ export default function LoginPage() {
                 value={password}
                 onChange={(e) => setPassword(e.target.value)}
                 required
+                disabled={isSubmitting || isLoading}
                 className="pl-10 bg-gray-800 border-gray-700 text-white placeholder:text-gray-500"
               />
             </div>
@@ -128,10 +144,10 @@ export default function LoginPage() {
 
           <Button
             type="submit"
-            disabled={isLoading}
-            className="w-full bg-gradient-to-r from-cyan-500 to-blue-500 hover:from-cyan-600 hover:to-blue-600 text-white py-2 rounded-lg transition-all duration-200"
+            disabled={isSubmitting || isLoading}
+            className="w-full bg-gradient-to-r from-cyan-500 to-blue-500 hover:from-cyan-600 hover:to-blue-600 text-white py-2 rounded-lg transition-all duration-200 disabled:opacity-50"
           >
-            {isLoading ? 'Signing in...' : 'Sign in'}
+            {isSubmitting || isLoading ? 'Signing in...' : 'Sign in'}
           </Button>
         </form>
 

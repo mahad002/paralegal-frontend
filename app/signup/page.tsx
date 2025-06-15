@@ -1,7 +1,6 @@
 'use client';
 
 import { useState, useCallback } from 'react';
-import Image from 'next/image';
 import { useRouter } from 'next/navigation';
 import Link from 'next/link';
 import * as UserAPI from '@/lib/api/User';
@@ -30,10 +29,30 @@ export default function SignupPage() {
       return false;
     }
 
+    if (name.trim().length < 2) {
+      toast({
+        title: 'Error',
+        description: 'Name must be at least 2 characters long',
+        variant: 'destructive',
+      });
+      return false;
+    }
+
     if (!email.trim()) {
       toast({
         title: 'Error',
         description: 'Please enter your email',
+        variant: 'destructive',
+      });
+      return false;
+    }
+
+    // Email format validation
+    const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+    if (!emailRegex.test(email)) {
+      toast({
+        title: 'Error',
+        description: 'Please enter a valid email address',
         variant: 'destructive',
       });
       return false;
@@ -57,21 +76,34 @@ export default function SignupPage() {
       return false;
     }
 
+    // Password strength validation
+    const hasUpperCase = /[A-Z]/.test(password);
+    const hasLowerCase = /[a-z]/.test(password);
+    const hasNumbers = /\d/.test(password);
+    
+    if (!hasUpperCase || !hasLowerCase || !hasNumbers) {
+      toast({
+        title: 'Error',
+        description: 'Password must contain at least one uppercase letter, one lowercase letter, and one number',
+        variant: 'destructive',
+      });
+      return false;
+    }
+
     return true;
   }, [name, email, password, toast]);
 
   const handleSubmit = async (e: React.FormEvent<HTMLFormElement>) => {
     e.preventDefault();
     
-    setIsLoading(true);
-    
     if (!validateForm()) {
-      setIsLoading(false);
       return;
     }
 
+    setIsLoading(true);
+
     try {
-      const response = await UserAPI.signup(name, email, password, role);
+      const response = await UserAPI.signup(name.trim(), email.trim(), password, role);
       
       if ('error' in response) {
         throw new Error(response.error);
@@ -83,11 +115,14 @@ export default function SignupPage() {
       });
       router.push('/login');
     } catch (error) {
-      setIsLoading(false);
       let errorMessage = 'An error occurred during signup.';
       
       if (error instanceof Error) {
-        errorMessage = error.message;
+        if (error.message.includes('email already exists') || error.message.includes('duplicate')) {
+          errorMessage = 'An account with this email already exists.';
+        } else {
+          errorMessage = error.message;
+        }
       }
 
       toast({
@@ -95,6 +130,8 @@ export default function SignupPage() {
         description: errorMessage,
         variant: 'destructive',
       });
+    } finally {
+      setIsLoading(false);
     }
   };
 
@@ -120,6 +157,7 @@ export default function SignupPage() {
                 value={name}
                 onChange={(e) => setName(e.target.value)}
                 required
+                disabled={isLoading}
                 className="pl-10 bg-gray-800 border-gray-700 text-white placeholder:text-gray-500"
               />
             </div>
@@ -131,6 +169,7 @@ export default function SignupPage() {
                 value={email}
                 onChange={(e) => setEmail(e.target.value)}
                 required
+                disabled={isLoading}
                 className="pl-10 bg-gray-800 border-gray-700 text-white placeholder:text-gray-500"
               />
             </div>
@@ -142,6 +181,7 @@ export default function SignupPage() {
                 value={password}
                 onChange={(e) => setPassword(e.target.value)}
                 required
+                disabled={isLoading}
                 className="pl-10 bg-gray-800 border-gray-700 text-white placeholder:text-gray-500"
               />
             </div>
@@ -150,6 +190,7 @@ export default function SignupPage() {
               <Select 
                 value={role}
                 onValueChange={(value: 'legal_researcher' | 'lawyer' | 'judge' | 'legal_professional') => setRole(value)}
+                disabled={isLoading}
               >
                 <SelectTrigger className="w-full pl-10 bg-gray-800 border-gray-700 text-white">
                   <SelectValue placeholder="Select your role" />
@@ -164,14 +205,19 @@ export default function SignupPage() {
             </div>
           </div>
 
-          <p className="text-xs text-gray-400">
-            Password must be at least 8 characters long
-          </p>
+          <div className="text-xs text-gray-400 space-y-1">
+            <p>Password requirements:</p>
+            <ul className="list-disc list-inside space-y-1">
+              <li>At least 8 characters long</li>
+              <li>Contains uppercase and lowercase letters</li>
+              <li>Contains at least one number</li>
+            </ul>
+          </div>
 
           <Button
             type="submit"
             disabled={isLoading}
-            className="w-full bg-gradient-to-r from-cyan-500 to-blue-500 hover:from-cyan-600 hover:to-blue-600 text-white py-2 rounded-lg transition-all duration-200"
+            className="w-full bg-gradient-to-r from-cyan-500 to-blue-500 hover:from-cyan-600 hover:to-blue-600 text-white py-2 rounded-lg transition-all duration-200 disabled:opacity-50"
           >
             {isLoading ? 'Creating account...' : 'Create Account'}
           </Button>

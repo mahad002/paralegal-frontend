@@ -1,6 +1,6 @@
 'use client';
 
-import { JSXElementConstructor, Key, ReactElement, ReactNode, ReactPortal, useEffect, useState } from 'react';
+import { useEffect, useState, useMemo } from 'react';
 import { useRouter } from 'next/navigation';
 import { useAuth } from '@/contexts/AuthContext';
 import { useSplash } from '@/contexts/SplashContext';
@@ -11,8 +11,7 @@ import { BarChart, Bar, XAxis, YAxis, Tooltip, ResponsiveContainer, PieChart, Pi
 import { Activity, Scale, Users, FileText, Building2, UserSquare2, Briefcase, Shield, UserCheck } from 'lucide-react';
 import * as CaseAPI from '@/lib/api/Case';
 import * as UserAPI from '@/lib/api/User';
-import type { Case } from '@/types';
-import type { User } from '@/types';
+import type { Case, User } from '@/types';
 
 interface DashboardMetrics {
   lawyerStats: any;
@@ -37,8 +36,8 @@ export default function HomePage() {
   const [metrics, setMetrics] = useState<DashboardMetrics | null>(null);
   const [isLoadingMetrics, setIsLoadingMetrics] = useState(true);
 
-  // Function to calculate metrics
-  const calculateMetrics = (cases: Case[], role: string, lawyersList: User[] = []): DashboardMetrics => {
+  // Memoized function to calculate metrics
+  const calculateMetrics = useMemo(() => (cases: Case[], role: string, lawyersList: User[] = []): DashboardMetrics => {
     // Count cases by status
     const statusCounts = cases.reduce((acc, c) => {
       acc[c.status] = (acc[c.status] || 0) + 1;
@@ -124,126 +123,65 @@ export default function HomePage() {
         averageCasesPerLawyer: "0"
       }
     };
-  };
+  }, []);
 
   // Ensure user is authenticated, otherwise redirect to login
   useEffect(() => {
-  if (!isLoading && !user) {
-    router.push('/login');
-  }
-}, [user, isLoading, router]);
-
-useEffect(() => {
-  const fetchCases = async () => {
-    if (!user || isLoading) return; // Prevents API calls when user is undefined
-
-    setIsLoadingMetrics(true);
-
-    try {
-      let casesResponse: Case[] | { error: string } = [];
-      let lawyersResponse: User[] | { error: string } = [];
-
-      console.log("Fetching data for user role:", user.role);
-
-      switch (user.role) {
-        case 'admin':
-          casesResponse = await CaseAPI.getAllCases();
-          lawyersResponse = await UserAPI.getAllUsers();
-          break;
-        case 'firm':
-          casesResponse = await CaseAPI.getCasesByFirm();
-          const firmLawyersResponse = await UserAPI.getFirmLawyers();
-          lawyersResponse = 'lawyers' in firmLawyersResponse ? firmLawyersResponse.lawyers : [];
-          break;
-        default:
-          casesResponse = await CaseAPI.getCasesByUser(user._id);
-      }
-
-      if (!Array.isArray(casesResponse)) {
-        console.error('Invalid cases response:', casesResponse);
-        setMetrics(null);
-        return;
-      }
-
-      const lawyers = user.role === 'admin' ? 
-        (Array.isArray(lawyersResponse) ? lawyersResponse : []) : 
-        (Array.isArray(lawyersResponse) ? lawyersResponse : []);
-      
-      const cases = Array.isArray(casesResponse) ? casesResponse : [];
-
-      // Calculate role distribution for admin
-      const roleDistribution = user.role === 'admin' ? lawyers.reduce((acc: { [x: string]: any; }, user: { role: string | number; }) => {
-        acc[user.role] = (acc[user.role] || 0) + 1;
-        return acc;
-      }, {} as Record<string, number>) : {};
-
-      // Convert role distribution to array format
-      const usersByRole = Object.entries(roleDistribution).map(([name, value]) => ({
-        name,
-        value: value as number
-      }));
-
-      // Calculate lawyer metrics
-      const lawyerMetrics = lawyers.map((lawyer: { _id: string | User | undefined; name: any; }) => {
-        const lawyerCases = cases.filter(c => c.assignedLawyer === lawyer._id);
-        const activeCases = lawyerCases.filter(c => c.status === 'Open' || c.status === 'In Progress');
-        const completedCases = lawyerCases.filter(c => c.status === 'Resolved' || c.status === 'Closed');
-        return {
-          name: lawyer.name,
-          totalCases: lawyerCases.length,
-          activeCases: activeCases.length,
-          completedCases: completedCases.length,
-          completionRate: lawyerCases.length ? (completedCases.length / lawyerCases.length) * 100 : 0
-        };
-      });
-
-      // Calculate base metrics
-      const statusCounts = cases.reduce((acc, c) => {
-        acc[c.status] = (acc[c.status] || 0) + 1;
-        return acc;
-      }, {} as Record<string, number>);
-
-      const monthlyTrend = cases.reduce((acc, c) => {
-        const month = new Date(c.createdAt).toLocaleString('default', { month: 'short' });
-        acc[month] = (acc[month] || 0) + 1;
-        return acc;
-      }, {} as Record<string, number>);
-
-      const calculatedMetrics = {
-        totalCases: cases.length,
-        openCases: statusCounts['Open'] || 0,
-        resolvedCases: statusCounts['Resolved'] || 0,
-        closedCases: statusCounts['Closed'] || 0,
-        totalLawyers: lawyers.length,
-        totalFirms: lawyers.filter((l: { role: string; }) => l.role === 'firm').length,
-        activeLawyers: lawyers.filter((l: { role: string; }) => l.role === 'lawyer').length,
-        usersByRole,
-        lawyerStats: {
-          completionRates: lawyerMetrics.map((l: { name: any; completionRate: number; }) => ({
-            name: l.name,
-            rate: Math.round(l.completionRate * 10) / 10
-          })),
-          caseDistribution: lawyerMetrics.map((l: { name: any; activeCases: any; }) => ({
-            name: l.name,
-            count: l.activeCases
-          }))
-        },
-        casesByStatus: Object.entries(statusCounts).map(([name, value]) => ({ name, value })),
-        casesTrend: Object.entries(monthlyTrend).map(([month, cases]) => ({ month, cases }))
-      };
-      setMetrics(calculatedMetrics);
-    } catch (error) {
-      console.error('Error fetching cases:', error);
-      setMetrics(null);
-    } finally {
-      setIsLoadingMetrics(false);
+    if (!isLoading && !user) {
+      router.push('/login');
     }
-  };
+  }, [user, isLoading, router]);
 
-  if (user && !isLoading) {
-    fetchCases();
-  }
-}, [user, isLoading]);
+  useEffect(() => {
+    const fetchCases = async () => {
+      if (!user || isLoading) return;
+
+      setIsLoadingMetrics(true);
+
+      try {
+        let casesResponse: Case[] | { error: string } = [];
+        let lawyersResponse: User[] | { error: string } = [];
+
+        switch (user.role) {
+          case 'admin':
+            casesResponse = await CaseAPI.getAllCases();
+            lawyersResponse = await UserAPI.getAllUsers();
+            break;
+          case 'firm':
+            casesResponse = await CaseAPI.getCasesByFirm();
+            const firmLawyersResponse = await UserAPI.getFirmLawyers();
+            lawyersResponse = 'lawyers' in firmLawyersResponse ? firmLawyersResponse.lawyers : [];
+            break;
+          default:
+            casesResponse = await CaseAPI.getCasesByUser(user._id);
+        }
+
+        if (!Array.isArray(casesResponse)) {
+          console.error('Invalid cases response:', casesResponse);
+          setMetrics(null);
+          return;
+        }
+
+        const lawyers = user.role === 'admin' ? 
+          (Array.isArray(lawyersResponse) ? lawyersResponse : []) : 
+          (Array.isArray(lawyersResponse) ? lawyersResponse : []);
+        
+        const cases = Array.isArray(casesResponse) ? casesResponse : [];
+
+        const calculatedMetrics = calculateMetrics(cases, user.role, lawyers);
+        setMetrics(calculatedMetrics);
+      } catch (error) {
+        console.error('Error fetching cases:', error);
+        setMetrics(null);
+      } finally {
+        setIsLoadingMetrics(false);
+      }
+    };
+
+    if (user && !isLoading) {
+      fetchCases();
+    }
+  }, [user, isLoading, calculateMetrics]);
 
   // Don't render anything while splash screen is showing
   if (splashLoading) {
@@ -251,7 +189,11 @@ useEffect(() => {
   }
 
   if (isLoadingMetrics || !user) {
-    return <div className="flex justify-center items-center h-screen">Loading...</div>;
+    return (
+      <div className="flex justify-center items-center h-screen">
+        <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-cyan-500"></div>
+      </div>
+    );
   }
 
   if (!metrics) {
@@ -333,7 +275,7 @@ useEffect(() => {
         ))}
       </div>
 
-      {user.role === 'admin' && (
+      {user.role === 'admin' && metrics.usersByRole && (
         <div className="grid grid-cols-1 md:grid-cols-3 gap-6 mb-6">
           <Card className="bg-gradient-to-br from-indigo-900 to-indigo-800 border-0 shadow-xl">
             <CardContent className="p-6">
@@ -435,108 +377,108 @@ useEffect(() => {
 
       {user.role === 'admin' && metrics.usersByRole && (
         <>
-        <div className="mt-6">
-          <Card className="bg-gradient-to-br from-gray-900 to-gray-800 border-0 shadow-xl">
-            <CardHeader>
-              <CardTitle className="text-white">User Distribution by Role</CardTitle>
-              <CardDescription className="text-gray-400">
-                Overview of user roles across the system
-              </CardDescription>
-            </CardHeader>
-            <CardContent>
-              <div className="overflow-x-auto">
-                <Table>
-                  <TableHeader>
-                    <TableRow className="border-gray-800">
-                      <TableHead className="text-gray-300">Role</TableHead>
-                      <TableHead className="text-gray-300">Count</TableHead>
-                      <TableHead className="text-gray-300">Percentage</TableHead>
-                    </TableRow>
-                  </TableHeader>
-                  <TableBody>
-                    {metrics.usersByRole.map((role) => (
-                      <TableRow key={role.name} className="border-gray-800">
-                        <TableCell className="font-medium text-white capitalize">
-                          {role.name.replace('_', ' ')}
-                        </TableCell>
-                        <TableCell className="text-gray-300">{role.value}</TableCell>
-                        <TableCell className="text-gray-300">
-                          {((role.value / metrics.totalLawyers!) * 100).toFixed(1)}%
-                        </TableCell>
-                      </TableRow>
-                    ))}
-                  </TableBody>
-                </Table>
-              </div>
-            </CardContent>
-          </Card>
-        </div>
-        <div className="mt-6">
-          <Card className="bg-gradient-to-br from-gray-900 to-gray-800 border-0 shadow-xl">
-            <CardHeader className="flex flex-row items-center justify-between">
-              <div>
-                <CardTitle className="text-white">Lawyer Performance Details</CardTitle>
+          <div className="mt-6">
+            <Card className="bg-gradient-to-br from-gray-900 to-gray-800 border-0 shadow-xl">
+              <CardHeader>
+                <CardTitle className="text-white">User Distribution by Role</CardTitle>
                 <CardDescription className="text-gray-400">
-                  Detailed metrics for each associated lawyer
+                  Overview of user roles across the system
                 </CardDescription>
-              </div>
-              <Button
-                onClick={() => router.push('/firm/lawyers')}
-                className="bg-gradient-to-r from-cyan-500 to-blue-500 hover:from-cyan-600 hover:to-blue-600"
-              >
-                Manage Lawyers
-              </Button>
-            </CardHeader>
-            <CardContent>
-              <div className="overflow-x-auto">
-                <Table>
-                  <TableHeader>
-                    <TableRow className="border-gray-800">
-                      <TableHead className="text-gray-300">Lawyer</TableHead>
-                      <TableHead className="text-gray-300">Active Cases</TableHead>
-                      <TableHead className="text-gray-300">Completed Cases</TableHead>
-                      <TableHead className="text-gray-300">Success Rate</TableHead>
-                      <TableHead className="text-gray-300">Last Activity</TableHead>
-                    </TableRow>
-                  </TableHeader>
-                  <TableBody>
-                    {(metrics.lawyerStats?.caseDistribution || []).map((lawyer: { name: boolean | ReactElement<any, string | JSXElementConstructor<any>> | Iterable<ReactNode> | Key | null | undefined; count: string | number | boolean | ReactElement<any, string | JSXElementConstructor<any>> | Iterable<ReactNode> | ReactPortal | null | undefined; }) => (
-                      <TableRow key={String(lawyer.name)} className="border-gray-800">
-                        <TableCell className="font-medium text-white">
-                          {String(lawyer.name)}
-                        </TableCell>
-                        <TableCell className="text-gray-300">
-                          {lawyer.count}
-                        </TableCell>
-                        <TableCell className="text-gray-300">
-                          {metrics.lawyerStats?.completionRates?.find((l: { name: any; }) => l.name === lawyer.name)?.rate || 0}
-                        </TableCell>
-                        <TableCell className="text-gray-300">
-                          <div className="flex items-center">
-                            <div className="w-full bg-gray-800 rounded-full h-2 mr-2">
-                              <div
-                                className="bg-cyan-400 h-2 rounded-full"
-                                style={{
-                                  width: `${metrics.lawyerStats?.completionRates?.find((l: { name: any; }) => l.name === lawyer.name)?.rate || 0}%`
-                                }}
-                              />
-                            </div>
-                            <span>
-                              {metrics.lawyerStats?.completionRates?.find((l: { name: any; }) => l.name === lawyer.name)?.rate || 0}%
-                            </span>
-                          </div>
-                        </TableCell>
-                        <TableCell className="text-gray-300">
-                          {new Date().toLocaleDateString()}
-                        </TableCell>
+              </CardHeader>
+              <CardContent>
+                <div className="overflow-x-auto">
+                  <Table>
+                    <TableHeader>
+                      <TableRow className="border-gray-800">
+                        <TableHead className="text-gray-300">Role</TableHead>
+                        <TableHead className="text-gray-300">Count</TableHead>
+                        <TableHead className="text-gray-300">Percentage</TableHead>
                       </TableRow>
-                    ))}
-                  </TableBody>
-                </Table>
-              </div>
-            </CardContent>
-          </Card>
-        </div>
+                    </TableHeader>
+                    <TableBody>
+                      {metrics.usersByRole.map((role) => (
+                        <TableRow key={role.name} className="border-gray-800">
+                          <TableCell className="font-medium text-white capitalize">
+                            {role.name.replace('_', ' ')}
+                          </TableCell>
+                          <TableCell className="text-gray-300">{role.value}</TableCell>
+                          <TableCell className="text-gray-300">
+                            {((role.value / metrics.totalLawyers!) * 100).toFixed(1)}%
+                          </TableCell>
+                        </TableRow>
+                      ))}
+                    </TableBody>
+                  </Table>
+                </div>
+              </CardContent>
+            </Card>
+          </div>
+          <div className="mt-6">
+            <Card className="bg-gradient-to-br from-gray-900 to-gray-800 border-0 shadow-xl">
+              <CardHeader className="flex flex-row items-center justify-between">
+                <div>
+                  <CardTitle className="text-white">Lawyer Performance Details</CardTitle>
+                  <CardDescription className="text-gray-400">
+                    Detailed metrics for each associated lawyer
+                  </CardDescription>
+                </div>
+                <Button
+                  onClick={() => router.push('/firm/lawyers')}
+                  className="bg-gradient-to-r from-cyan-500 to-blue-500 hover:from-cyan-600 hover:to-blue-600"
+                >
+                  Manage Lawyers
+                </Button>
+              </CardHeader>
+              <CardContent>
+                <div className="overflow-x-auto">
+                  <Table>
+                    <TableHeader>
+                      <TableRow className="border-gray-800">
+                        <TableHead className="text-gray-300">Lawyer</TableHead>
+                        <TableHead className="text-gray-300">Active Cases</TableHead>
+                        <TableHead className="text-gray-300">Completed Cases</TableHead>
+                        <TableHead className="text-gray-300">Success Rate</TableHead>
+                        <TableHead className="text-gray-300">Last Activity</TableHead>
+                      </TableRow>
+                    </TableHeader>
+                    <TableBody>
+                      {(metrics.lawyerStats?.caseDistribution || []).map((lawyer: any) => (
+                        <TableRow key={String(lawyer.name)} className="border-gray-800">
+                          <TableCell className="font-medium text-white">
+                            {String(lawyer.name)}
+                          </TableCell>
+                          <TableCell className="text-gray-300">
+                            {lawyer.count}
+                          </TableCell>
+                          <TableCell className="text-gray-300">
+                            {metrics.lawyerStats?.completionRates?.find((l: any) => l.name === lawyer.name)?.rate || 0}
+                          </TableCell>
+                          <TableCell className="text-gray-300">
+                            <div className="flex items-center">
+                              <div className="w-full bg-gray-800 rounded-full h-2 mr-2">
+                                <div
+                                  className="bg-cyan-400 h-2 rounded-full"
+                                  style={{
+                                    width: `${metrics.lawyerStats?.completionRates?.find((l: any) => l.name === lawyer.name)?.rate || 0}%`
+                                  }}
+                                />
+                              </div>
+                              <span>
+                                {metrics.lawyerStats?.completionRates?.find((l: any) => l.name === lawyer.name)?.rate || 0}%
+                              </span>
+                            </div>
+                          </TableCell>
+                          <TableCell className="text-gray-300">
+                            {new Date().toLocaleDateString()}
+                          </TableCell>
+                        </TableRow>
+                      ))}
+                    </TableBody>
+                  </Table>
+                </div>
+              </CardContent>
+            </Card>
+          </div>
         </>
       )}
     </div>

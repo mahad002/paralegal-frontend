@@ -1,6 +1,6 @@
 'use client';
 
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useCallback } from 'react';
 import { useRouter } from 'next/navigation';
 import { useAuth } from '@/contexts/AuthContext';
 import { Button } from '@/components/ui/button';
@@ -28,7 +28,7 @@ interface AnalysisResult {
   rulings: string[];
 }
 
-const API_URL = process.env.NEXT_PUBLIC_API_URL || 'https://paralegal-backend.onrender.com';
+const API_URL = process.env.NEXT_PUBLIC_API_URL || process.env.API_URL || 'https://paralegal-backend.onrender.com';
 const BOT_URL = process.env.NEXT_PUBLIC_BOT_URL || 'https://case-note-cretaion-bot.onrender.com';
 
 export default function CaseNotesPage() {
@@ -44,30 +44,30 @@ export default function CaseNotesPage() {
   const [isTextView, setIsTextView] = useState(false);
   const [activeTab, setActiveTab] = useState<'list' | 'upload'>('list');
 
-  useEffect(() => {
-    const fetchNotes = async () => {
-      if (!user) return;
+  const fetchNotes = useCallback(async () => {
+    if (!user) return;
 
-      try {
-        const response = await CaseNoteAPI.getCaseNotes(user._id);
-        if ('error' in response) {
-          throw new Error(response.error);
-        }
-        setNotes(response);
-      } catch (error) {
-        console.error('Error fetching notes:', error);
-        toast({
-          title: 'Error',
-          description: 'Failed to fetch case notes',
-          variant: 'destructive',
-        });
-      } finally {
-        setIsLoading(false);
+    try {
+      const response = await CaseNoteAPI.getCaseNotes(user._id);
+      if ('error' in response) {
+        throw new Error(response.error);
       }
-    };
-
-    fetchNotes();
+      setNotes(response);
+    } catch (error) {
+      console.error('Error fetching notes:', error);
+      toast({
+        title: 'Error',
+        description: 'Failed to fetch case notes',
+        variant: 'destructive',
+      });
+    } finally {
+      setIsLoading(false);
+    }
   }, [user, toast]);
+
+  useEffect(() => {
+    fetchNotes();
+  }, [fetchNotes]);
 
   const handleFileUpload = async (event: React.ChangeEvent<HTMLInputElement>) => {
     const file = event.target.files?.[0];
@@ -80,7 +80,30 @@ export default function CaseNotesPage() {
       return;
     }
 
+    // Validate file type
+    const allowedTypes = ['application/pdf', 'text/plain', 'application/msword', 'application/vnd.openxmlformats-officedocument.wordprocessingml.document'];
+    if (!allowedTypes.includes(file.type)) {
+      toast({
+        title: "Invalid File Type",
+        description: "Please upload a PDF, DOC, DOCX, or TXT file",
+        variant: "destructive",
+      });
+      return;
+    }
+
+    // Validate file size (10MB limit)
+    if (file.size > 10 * 1024 * 1024) {
+      toast({
+        title: "File Too Large",
+        description: "Please upload a file smaller than 10MB",
+        variant: "destructive",
+      });
+      return;
+    }
+
     setIsAnalyzing(true);
+    setAnalysisResult(null);
+    setRawResponse(null);
 
     try {
       const token = localStorage.getItem("token");
@@ -100,8 +123,16 @@ export default function CaseNotesPage() {
         body: formData,
       });
 
-      const { links } = await uploadResponse.json();
-      const s3Link = links[0];
+      if (!uploadResponse.ok) {
+        throw new Error(`Upload failed: ${uploadResponse.statusText}`);
+      }
+
+      const uploadData = await uploadResponse.json();
+      const s3Link = uploadData.links?.[0];
+
+      if (!s3Link) {
+        throw new Error("No file link received from upload");
+      }
 
       // Process the uploaded file
       const processResponse = await fetch(`${BOT_URL}/process-judgment`, {
@@ -113,8 +144,17 @@ export default function CaseNotesPage() {
         body: JSON.stringify({ s3_link: s3Link }),
       });
 
+      if (!processResponse.ok) {
+        throw new Error(`Processing failed: ${processResponse.statusText}`);
+      }
+
       const response = await processResponse.json();
       const result: AnalysisResult = response.processed_data;
+      
+      if (!result) {
+        throw new Error("No analysis result received");
+      }
+
       setAnalysisResult(result);
       setRawResponse(JSON.stringify(response, null, 2));
 
@@ -122,20 +162,20 @@ export default function CaseNotesPage() {
       if (user?._id) {
         const noteData = {
           case: user._id, // This should be the actual case ID
-          citations: result.citations,
-          facts: result.facts,
-          statutes: result.statutes,
-          precedents: result.precedents,
-          ratio: result.ratio,
-          rulings: result.rulings,
+          citations: result.citations || [],
+          facts: result.facts || [],
+          statutes: result.statutes || { acts: [], sections: [], articles: [] },
+          precedents: result.precedents || [],
+          ratio: result.ratio || [],
+          rulings: result.rulings || [],
         };
 
         const savedNote = await CaseNoteAPI.addCaseNote(user._id, noteData);
         if ('error' in savedNote) {
-          throw new Error(savedNote.error);
+          console.warn('Failed to save note:', savedNote.error);
+        } else {
+          setNotes(prev => [...prev, savedNote]);
         }
-
-        setNotes(prev => [...prev, savedNote]);
       }
 
       toast({
@@ -146,11 +186,13 @@ export default function CaseNotesPage() {
       console.error("Error uploading or analyzing case note:", error);
       toast({
         title: "Operation failed",
-        description: "An error occurred during upload or analysis",
+        description: error instanceof Error ? error.message : "An error occurred during upload or analysis",
         variant: "destructive",
       });
     } finally {
       setIsAnalyzing(false);
+      // Reset file input
+      event.target.value = '';
     }
   };
 
@@ -223,7 +265,7 @@ export default function CaseNotesPage() {
           {['Citations', 'Facts', 'Statutes', 'Precedents', 'Ratio', 'Rulings', 'Raw Response'].map((tab) => (
             <TabsTrigger 
               key={tab} 
-              value={tab.toLowerCase()}
+              value={tab.toLowerCase().replace(' ', '')}
               className="data-[state=active]:bg-gray-700 text-gray-300"
             >
               {tab}
@@ -242,17 +284,30 @@ export default function CaseNotesPage() {
         <TabsContent value="precedents">{renderSection("Precedents", analysisResult.precedents)}</TabsContent>
         <TabsContent value="ratio">{renderSection("Ratio", analysisResult.ratio)}</TabsContent>
         <TabsContent value="rulings">{renderSection("Rulings", analysisResult.rulings)}</TabsContent>
-        <TabsContent value="raw response">
+        <TabsContent value="rawresponse">
           <ScrollArea className="h-[300px]">
-            <pre className="bg-gray-800 p-4 rounded text-gray-300">{rawResponse}</pre>
+            <pre className="bg-gray-800 p-4 rounded text-gray-300 text-sm overflow-x-auto">
+              {rawResponse || 'No raw response available'}
+            </pre>
           </ScrollArea>
         </TabsContent>
       </Tabs>
     );
   };
 
+  const filteredNotes = notes.filter(note =>
+    searchTerm === '' || 
+    (typeof note.case === 'string' ? note.case : note.case.caseTitle)
+      .toLowerCase()
+      .includes(searchTerm.toLowerCase())
+  );
+
   if (isLoading) {
-    return <div className="flex justify-center items-center h-screen">Loading...</div>;
+    return (
+      <div className="flex justify-center items-center h-screen">
+        <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-cyan-500"></div>
+      </div>
+    );
   }
 
   return (
@@ -301,8 +356,8 @@ export default function CaseNotesPage() {
                   </TableRow>
                 </TableHeader>
                 <TableBody>
-                  {notes.length > 0 ? (
-                    notes.map((note) => (
+                  {filteredNotes.length > 0 ? (
+                    filteredNotes.map((note) => (
                       <TableRow key={note._id} className="border-gray-800">
                         <TableCell className="font-medium text-white">
                           {typeof note.case === 'string' ? note.case : note.case.caseTitle}
@@ -338,7 +393,7 @@ export default function CaseNotesPage() {
                   ) : (
                     <TableRow>
                       <TableCell colSpan={4} className="text-center text-gray-400 py-8">
-                        No case notes yet
+                        {searchTerm ? 'No matching case notes found' : 'No case notes yet'}
                       </TableCell>
                     </TableRow>
                   )}
@@ -364,16 +419,43 @@ export default function CaseNotesPage() {
             </CardTitle>
           </CardHeader>
           <CardContent>
-            <Input type="file" onChange={handleFileUpload} className="hidden" id="file-upload" />
-            <label htmlFor="file-upload">
-              <Button asChild className="bg-gradient-to-r from-cyan-500 to-blue-500 hover:from-cyan-600 hover:to-blue-600">
-                <span>
-                  <Upload className="mr-2" />
-                  {isAnalyzing ? "Analyzing..." : "Upload Case File"}
-                </span>
-              </Button>
-            </label>
-            {analysisResult && (
+            <div className="mb-6">
+              <Input 
+                type="file" 
+                onChange={handleFileUpload} 
+                className="hidden" 
+                id="file-upload"
+                accept=".pdf,.doc,.docx,.txt"
+                disabled={isAnalyzing}
+              />
+              <label htmlFor="file-upload">
+                <Button 
+                  asChild 
+                  className="bg-gradient-to-r from-cyan-500 to-blue-500 hover:from-cyan-600 hover:to-blue-600"
+                  disabled={isAnalyzing}
+                >
+                  <span>
+                    <Upload className="mr-2" />
+                    {isAnalyzing ? "Analyzing..." : "Upload Case File"}
+                  </span>
+                </Button>
+              </label>
+              <p className="text-sm text-gray-400 mt-2">
+                Supported formats: PDF, DOC, DOCX, TXT (Max 10MB)
+              </p>
+            </div>
+            
+            {isAnalyzing && (
+              <div className="flex items-center justify-center p-8">
+                <div className="flex flex-col items-center gap-4">
+                  <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-cyan-500"></div>
+                  <p className="text-gray-400">Analyzing document...</p>
+                  <p className="text-sm text-gray-500">This may take a few minutes</p>
+                </div>
+              </div>
+            )}
+
+            {analysisResult && !isAnalyzing && (
               <div className="mt-6">
                 {isTextView ? renderTextView() : renderTabbedView()}
               </div>
