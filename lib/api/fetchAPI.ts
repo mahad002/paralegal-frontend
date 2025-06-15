@@ -59,7 +59,13 @@ async function fetchAPI<T>(endpoint: string, options: RequestInit = {}): Promise
       return data;
     } catch (error) {
       clearTimeout(timeout);
-      console.error('API Error:', error);
+      
+      const errorMessage = error instanceof Error ? 
+        error.name === 'AbortError' ? 
+          'Request timed out. Please try again.' : 
+          error.message : 
+        'Network error occurred';
+      console.error('API Error:', errorMessage);
 
       return { 
         error: error instanceof Error ? 
