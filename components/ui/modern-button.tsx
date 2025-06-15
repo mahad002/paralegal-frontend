@@ -6,7 +6,7 @@ import { cn } from '@/lib/utils';
 import { ButtonLoader } from './loading-states';
 
 interface ModernButtonProps extends ButtonHTMLAttributes<HTMLButtonElement> {
-  children: ReactNode;
+  children?: ReactNode;
   variant?: 'primary' | 'secondary' | 'ghost' | 'danger';
   size?: 'sm' | 'md' | 'lg';
   loading?: boolean;

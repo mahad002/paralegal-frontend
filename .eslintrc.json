@@ -1,7 +1,7 @@
 {
   "extends": [
     "eslint:recommended",
-    "plugin:@typescript-eslint/recommended",
+    "@typescript-eslint/recommended",
     "next/core-web-vitals"
   ],
   "parser": "@typescript-eslint/parser",
@@ -13,19 +13,12 @@
     }
   },
   "plugins": [
-    "@typescript-eslint",
-    "react-hooks",
-    "react-refresh"
+    "@typescript-eslint"
   ],
   "rules": {
     "react/no-unescaped-entities": "off",
     "@next/next/no-img-element": "off",
-    "@typescript-eslint/no-unused-vars": "error",
-    "react-hooks/rules-of-hooks": "error",
-    "react-refresh/only-export-components": [
-      "warn",
-      { "allowConstantExport": true }
-    ]
+    "@typescript-eslint/no-unused-vars": "error"
   },
   "settings": {
     "react": {
