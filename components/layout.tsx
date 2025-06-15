@@ -39,14 +39,14 @@ export function Layout({ children }: { children: React.ReactNode }) {
 
   if (isAuthPage) {
     return (
-      <div className="min-h-screen bg-gradient-to-br from-navy-950 via-navy-900 to-navy-800">
+      <div className="min-h-screen bg-gradient-to-br from-tricorn-950 via-tricorn-900 to-navy-950">
         {children}
       </div>
     );
   }
 
   return (
-    <div className="min-h-screen bg-gradient-to-br from-navy-950 via-navy-900 to-navy-800 flex">
+    <div className="min-h-screen bg-gradient-to-br from-tricorn-950 via-tricorn-900 to-navy-950 flex">
       {/* Sidebar Overlay for Mobile */}
       <AnimatePresence>
         {isSidebarOpen && isMobile && (
@@ -54,7 +54,7 @@ export function Layout({ children }: { children: React.ReactNode }) {
             initial={{ opacity: 0 }}
             animate={{ opacity: 1 }}
             exit={{ opacity: 0 }}
-            className="fixed inset-0 bg-navy-950/60 backdrop-blur-sm z-40 lg:hidden"
+            className="fixed inset-0 bg-tricorn-950/60 backdrop-blur-sm z-40 lg:hidden"
             onClick={() => setIsSidebarOpen(false)}
           />
         )}
