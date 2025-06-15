@@ -6,7 +6,7 @@ import { Input } from '@/components/ui/input';
 import { Textarea } from '@/components/ui/textarea';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { ScrollArea } from '@/components/ui/scroll-area';
-import { Scale, Send, Bot, User, CheckCircle2, Clock, XCircle, RefreshCw, Sparkles } from 'lucide-react';
+import { Scale, Send, Bot, User, CheckCircle2, Clock, XCircle, RefreshCw, MessageSquare } from 'lucide-react';
 import { useToast } from '@/components/ui/use-toast';
 
 interface DueDiligenceRequest {
@@ -19,15 +19,11 @@ interface DueDiligenceRequest {
 
 interface ChatMessage {
   id: string;
-  type: 'user' | 'bot' | 'system';
+  type: 'user' | 'bot';
   content: string;
   timestamp: Date;
   status?: 'processing' | 'completed' | 'error';
-  requestData?: {
-    scope: string;
-    jurisdictions: string;
-    concerns: string;
-  };
+  requestId?: string;
 }
 
 export default function ComplianceBotPage() {
@@ -35,55 +31,33 @@ export default function ComplianceBotPage() {
   const [jurisdictions, setJurisdictions] = useState('Pakistan');
   const [concerns, setConcerns] = useState('');
   const [isSubmitting, setIsSubmitting] = useState(false);
-  const [currentRequest, setCurrentRequest] = useState<DueDiligenceRequest | null>(null);
-  const [pollInterval, setPollInterval] = useState<NodeJS.Timeout | null>(null);
   const [messages, setMessages] = useState<ChatMessage[]>([
     {
-      id: '1',
+      id: 'welcome',
       type: 'bot',
-      content: 'Hello! I\'m your Due Diligence Assistant. I can help you analyze legal compliance for your business needs in Pakistan. Please provide the details of your request below.',
+      content: 'Hello! I\'m your Due Diligence Assistant. I can help you analyze legal compliance for your business needs in Pakistan. Please fill out the form and click "Send Request" to get started.',
       timestamp: new Date(),
+      status: 'completed'
     }
   ]);
+  const [activeRequests, setActiveRequests] = useState<Set<string>>(new Set());
   const { toast } = useToast();
   const scrollAreaRef = useRef<HTMLDivElement>(null);
-  
-  // Use refs to track notification states and prevent duplicate toasts
-  const notificationState = useRef({
-    hasShownCompletion: false,
-    hasShownError: false,
-    lastRequestId: '',
-    isPolling: false
-  });
+  const messagesEndRef = useRef<HTMLDivElement>(null);
 
   // Auto-scroll to bottom when new messages are added
-  useEffect(() => {
-    if (scrollAreaRef.current) {
-      const scrollContainer = scrollAreaRef.current.querySelector('[data-radix-scroll-area-viewport]');
-      if (scrollContainer) {
-        scrollContainer.scrollTop = scrollContainer.scrollHeight;
-      }
-    }
-  }, [messages]);
+  const scrollToBottom = useCallback(() => {
+    messagesEndRef.current?.scrollIntoView({ behavior: 'smooth' });
+  }, []);
 
-  // Cleanup function to clear intervals and reset state
-  const cleanup = useCallback(() => {
-    if (pollInterval) {
-      clearInterval(pollInterval);
-      setPollInterval(null);
-    }
-    notificationState.current.isPolling = false;
-  }, [pollInterval]);
-
-  // Cleanup on component unmount
   useEffect(() => {
-    return cleanup;
-  }, [cleanup]);
+    scrollToBottom();
+  }, [messages, scrollToBottom]);
 
   const addMessage = useCallback((message: Omit<ChatMessage, 'id' | 'timestamp'>) => {
     const newMessage: ChatMessage = {
       ...message,
-      id: Date.now().toString(),
+      id: `msg-${Date.now()}-${Math.random().toString(36).substr(2, 9)}`,
       timestamp: new Date(),
     };
     setMessages(prev => [...prev, newMessage]);
@@ -97,133 +71,96 @@ export default function ComplianceBotPage() {
   }, []);
 
   const checkRequestStatus = useCallback(async (requestId: string, messageId: string) => {
-    // Prevent multiple simultaneous requests
-    if (notificationState.current.isPolling) {
-      return;
-    }
-
-    notificationState.current.isPolling = true;
+    if (!activeRequests.has(requestId)) return;
 
     try {
-      const response = await fetch(`https://paralegal-compliance-bot.onrender.com/due-diligence/${requestId}`, {
-        method: 'GET',
-        headers: {
-          'Content-Type': 'application/json',
-        },
-      });
-
+      const response = await fetch(`https://paralegal-compliance-bot.onrender.com/due-diligence/${requestId}`);
+      
       if (!response.ok) {
         throw new Error(`HTTP error! status: ${response.status}`);
       }
 
-      const data = await response.json();
-      setCurrentRequest(data);
+      const data: DueDiligenceRequest = await response.json();
 
-      // Check if this is a new request or status change
-      const isNewRequest = notificationState.current.lastRequestId !== requestId;
-      const hasStatusChanged = data.status !== 'processing';
-
-      if (hasStatusChanged) {
-        cleanup(); // Stop polling
-
-        if (data.status === 'completed' && data.result) {
-          updateMessage(messageId, {
-            content: data.result,
-            status: 'completed'
-          });
-          
-          if (!notificationState.current.hasShownCompletion || isNewRequest) {
-            notificationState.current.hasShownCompletion = true;
-            notificationState.current.lastRequestId = requestId;
-            toast({
-              title: 'Analysis Complete',
-              description: 'Your due diligence report is ready.',
-            });
-          }
-        } else if (data.status === 'error') {
-          updateMessage(messageId, {
-            content: `Analysis failed: ${data.error || 'An unexpected error occurred during analysis.'}`,
-            status: 'error'
-          });
-          
-          if (!notificationState.current.hasShownError || isNewRequest) {
-            notificationState.current.hasShownError = true;
-            notificationState.current.lastRequestId = requestId;
-            toast({
-              title: 'Analysis Failed',
-              description: data.error || 'An error occurred during analysis.',
-              variant: 'destructive',
-            });
-          }
-        }
+      if (data.status === 'completed' && data.result) {
+        updateMessage(messageId, {
+          content: data.result,
+          status: 'completed'
+        });
+        setActiveRequests(prev => {
+          const newSet = new Set(prev);
+          newSet.delete(requestId);
+          return newSet;
+        });
+        
+        toast({
+          title: 'Analysis Complete',
+          description: 'Your due diligence report is ready.',
+        });
+      } else if (data.status === 'error') {
+        updateMessage(messageId, {
+          content: `Analysis failed: ${data.error || 'An unexpected error occurred.'}`,
+          status: 'error'
+        });
+        setActiveRequests(prev => {
+          const newSet = new Set(prev);
+          newSet.delete(requestId);
+          return newSet;
+        });
+        
+        toast({
+          title: 'Analysis Failed',
+          description: data.error || 'An error occurred during analysis.',
+          variant: 'destructive',
+        });
       }
+      // If still processing, the polling will continue
     } catch (error) {
       console.error('Error checking request status:', error);
-      cleanup();
-      
       updateMessage(messageId, {
         content: 'Failed to check request status. Please try again.',
         status: 'error'
       });
-      
-      // Only show error toast if we haven't shown one for this request
-      if (!notificationState.current.hasShownError) {
-        notificationState.current.hasShownError = true;
-        toast({
-          title: 'Connection Error',
-          description: 'Failed to check request status. Please try again.',
-          variant: 'destructive',
-        });
-      }
-    } finally {
-      notificationState.current.isPolling = false;
+      setActiveRequests(prev => {
+        const newSet = new Set(prev);
+        newSet.delete(requestId);
+        return newSet;
+      });
     }
-  }, [toast, cleanup, updateMessage]);
+  }, [activeRequests, updateMessage, toast]);
+
+  // Polling effect for active requests
+  useEffect(() => {
+    if (activeRequests.size === 0) return;
+
+    const interval = setInterval(() => {
+      messages.forEach(msg => {
+        if (msg.requestId && msg.status === 'processing' && activeRequests.has(msg.requestId)) {
+          checkRequestStatus(msg.requestId, msg.id);
+        }
+      });
+    }, 5000);
+
+    return () => clearInterval(interval);
+  }, [activeRequests, messages, checkRequestStatus]);
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     
-    // Validate form inputs
-    if (!scope.trim()) {
+    // Validate inputs
+    if (!scope.trim() || !jurisdictions.trim() || !concerns.trim()) {
       toast({
         title: 'Missing Information',
-        description: 'Please provide the scope of due diligence.',
-        variant: 'destructive',
-      });
-      return;
-    }
-
-    if (!jurisdictions.trim()) {
-      toast({
-        title: 'Missing Information',
-        description: 'Please specify the jurisdiction.',
-        variant: 'destructive',
-      });
-      return;
-    }
-
-    if (!concerns.trim()) {
-      toast({
-        title: 'Missing Information',
-        description: 'Please describe your main areas of concern.',
+        description: 'Please fill in all fields before submitting.',
         variant: 'destructive',
       });
       return;
     }
 
     setIsSubmitting(true);
-    cleanup(); // Clear any existing polling
-
-    // Reset notification state for new request
-    notificationState.current = {
-      hasShownCompletion: false,
-      hasShownError: false,
-      lastRequestId: '',
-      isPolling: false
-    };
 
     // Add user message
-    const userMessageContent = `**Due Diligence Request**
+    const userMessage = `**Due Diligence Request**
 
 **Scope:** ${scope.trim()}
 **Jurisdiction:** ${jurisdictions.trim()}
@@ -231,16 +168,12 @@ export default function ComplianceBotPage() {
 
     addMessage({
       type: 'user',
-      content: userMessageContent,
-      requestData: {
-        scope: scope.trim(),
-        jurisdictions: jurisdictions.trim(),
-        concerns: concerns.trim(),
-      }
+      content: userMessage,
+      status: 'completed'
     });
 
-    // Add processing message
-    const processingMessageId = addMessage({
+    // Add bot processing message
+    const botMessageId = addMessage({
       type: 'bot',
       content: 'Analyzing your request... This may take a few minutes.',
       status: 'processing'
@@ -263,16 +196,16 @@ export default function ComplianceBotPage() {
         throw new Error(`HTTP error! status: ${response.status}`);
       }
 
-      const data = await response.json();
+      const data: DueDiligenceRequest = await response.json();
 
       if (data.guardrail_violated) {
-        updateMessage(processingMessageId, {
+        updateMessage(botMessageId, {
           content: `Request rejected: ${data.error || 'Your request violates our content guidelines.'}`,
           status: 'error'
         });
         
         toast({
-          title: 'Guardrail Violation',
+          title: 'Request Rejected',
           description: data.error || 'Your request violates our content guidelines.',
           variant: 'destructive',
         });
@@ -280,33 +213,35 @@ export default function ComplianceBotPage() {
       }
 
       if (!data.request_id) {
-        throw new Error('No request ID received from server');
+        throw new Error('No request ID received');
       }
 
-      setCurrentRequest(data);
-      notificationState.current.lastRequestId = data.request_id;
-      
-      // Start polling for status updates
-      const interval = setInterval(() => {
-        checkRequestStatus(data.request_id, processingMessageId);
-      }, 5000); // Poll every 5 seconds
-      
-      setPollInterval(interval);
+      // Update message with request ID and start tracking
+      updateMessage(botMessageId, {
+        requestId: data.request_id
+      });
+
+      setActiveRequests(prev => new Set([...prev, data.request_id]));
 
       // Clear form
       setScope('');
       setConcerns('');
 
+      toast({
+        title: 'Request Submitted',
+        description: 'Your analysis request is being processed.',
+      });
+
     } catch (error) {
       console.error('Error submitting request:', error);
-      updateMessage(processingMessageId, {
-        content: `Submission failed: ${error instanceof Error ? error.message : 'Failed to submit due diligence request.'}`,
+      updateMessage(botMessageId, {
+        content: `Failed to submit request: ${error instanceof Error ? error.message : 'Unknown error occurred'}`,
         status: 'error'
       });
       
       toast({
-        title: 'Submission Error',
-        description: error instanceof Error ? error.message : 'Failed to submit due diligence request.',
+        title: 'Submission Failed',
+        description: error instanceof Error ? error.message : 'Failed to submit request.',
         variant: 'destructive',
       });
     } finally {
@@ -315,124 +250,76 @@ export default function ComplianceBotPage() {
   };
 
   const resetChat = () => {
-    cleanup();
+    setActiveRequests(new Set());
     setScope('');
     setJurisdictions('Pakistan');
     setConcerns('');
-    setCurrentRequest(null);
     setMessages([
       {
-        id: '1',
+        id: 'welcome',
         type: 'bot',
-        content: 'Hello! I\'m your Due Diligence Assistant. I can help you analyze legal compliance for your business needs in Pakistan. Please provide the details of your request below.',
+        content: 'Hello! I\'m your Due Diligence Assistant. I can help you analyze legal compliance for your business needs in Pakistan. Please fill out the form and click "Send Request" to get started.',
         timestamp: new Date(),
+        status: 'completed'
       }
     ]);
-    notificationState.current = {
-      hasShownCompletion: false,
-      hasShownError: false,
-      lastRequestId: '',
-      isPolling: false
-    };
   };
 
-  const formatMessageContent = (content: string) => {
-    // Split content into sections
-    const sections = content.split('\n\n').filter(section => section.trim());
+  const formatBotMessage = (content: string) => {
+    // Handle different content types
+    const lines = content.split('\n').filter(line => line.trim());
     
-    return sections.map((section, index) => {
-      if (!section.trim()) return null;
-
-      // Handle headers (lines starting with #)
-      if (section.startsWith('#')) {
-        const match = section.match(/^#+/);
-        const level = match ? match[0].length : 0;
-        const text = section.replace(/^#+\s*/, '');
+    return lines.map((line, index) => {
+      // Headers
+      if (line.startsWith('#')) {
+        const level = (line.match(/^#+/) || [''])[0].length;
+        const text = line.replace(/^#+\s*/, '');
         return (
-          <div key={index} className={`${level === 1 ? 'text-lg' : 'text-base'} font-bold text-white mb-2`}>
+          <h3 key={index} className={`font-bold text-white mb-2 ${level === 1 ? 'text-lg' : 'text-base'}`}>
             {text}
+          </h3>
+        );
+      }
+      
+      // Bold text
+      if (line.includes('**')) {
+        const parts = line.split(/(\*\*.*?\*\*)/);
+        return (
+          <p key={index} className="text-gray-300 mb-2">
+            {parts.map((part, i) => 
+              part.startsWith('**') && part.endsWith('**') ? (
+                <strong key={i} className="text-white">{part.slice(2, -2)}</strong>
+              ) : (
+                part
+              )
+            )}
+          </p>
+        );
+      }
+      
+      // List items
+      if (line.startsWith('-') || line.startsWith('•')) {
+        return (
+          <div key={index} className="flex items-start gap-2 mb-1">
+            <span className="text-cyan-400 mt-1">•</span>
+            <span className="text-gray-300 text-sm">{line.replace(/^[-•]\s*/, '')}</span>
           </div>
         );
       }
       
-      // Handle lists (lines starting with -)
-      if (section.includes('\n-')) {
-        const [title, ...items] = section.split('\n');
-        return (
-          <div key={index} className="mb-4">
-            {title && <p className="text-white font-medium mb-2">{title}</p>}
-            <ul className="list-none space-y-1">
-              {items.filter(item => item.trim()).map((item, i) => (
-                <li key={i} className="flex items-start gap-2 text-gray-300 text-sm">
-                  <span className="text-cyan-400 mt-1">•</span>
-                  <span>{item.replace(/^-\s*/, '')}</span>
-                </li>
-              ))}
-            </ul>
-          </div>
-        );
-      }
-
-      // Handle bold text (wrapped in **)
-      const formattedText = section.replace(
-        /\*\*(.*?)\*\*/g,
-        '<span class="font-semibold text-white">$1</span>'
-      );
-
+      // Regular paragraphs
       return (
-        <div
-          key={index}
-          className="text-gray-300 text-sm mb-3 leading-relaxed"
-          dangerouslySetInnerHTML={{ __html: formattedText }}
-        />
+        <p key={index} className="text-gray-300 mb-2 leading-relaxed">
+          {line}
+        </p>
       );
     });
   };
 
-  const getMessageIcon = (message: ChatMessage) => {
-    if (message.type === 'user') {
-      return <User className="h-4 w-4" />;
-    }
-    
-    if (message.status === 'processing') {
-      return <Clock className="h-4 w-4 animate-pulse" />;
-    }
-    
-    if (message.status === 'error') {
-      return <XCircle className="h-4 w-4" />;
-    }
-    
-    if (message.status === 'completed') {
-      return <CheckCircle2 className="h-4 w-4" />;
-    }
-    
-    return <Bot className="h-4 w-4" />;
-  };
-
-  const getMessageIconColor = (message: ChatMessage) => {
-    if (message.type === 'user') {
-      return 'text-blue-400';
-    }
-    
-    if (message.status === 'processing') {
-      return 'text-yellow-400';
-    }
-    
-    if (message.status === 'error') {
-      return 'text-red-400';
-    }
-    
-    if (message.status === 'completed') {
-      return 'text-green-400';
-    }
-    
-    return 'text-cyan-400';
-  };
-
   return (
-    <div className="container mx-auto p-6 max-w-6xl">
+    <div className="container mx-auto p-6 max-w-7xl">
       <div className="flex items-center gap-4 mb-6">
-        <div className="p-2 bg-gradient-to-r from-cyan-500/10 to-blue-500/10 rounded-full">
+        <div className="p-3 bg-gradient-to-r from-cyan-500/10 to-blue-500/10 rounded-full">
           <Scale className="h-8 w-8 text-cyan-400" />
         </div>
         <div>
@@ -441,20 +328,20 @@ export default function ComplianceBotPage() {
         </div>
       </div>
 
-      <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
-        {/* Chat Interface */}
-        <div className="lg:col-span-2">
-          <Card className="bg-gray-900 border-gray-800 h-[600px] flex flex-col">
+      <div className="grid grid-cols-1 lg:grid-cols-4 gap-6">
+        {/* Chat Interface - Takes up 3/4 of the space */}
+        <div className="lg:col-span-3">
+          <Card className="bg-gray-900 border-gray-800 h-[700px] flex flex-col">
             <CardHeader className="border-b border-gray-800 pb-4">
               <div className="flex items-center justify-between">
                 <div className="flex items-center gap-3">
                   <div className="p-2 bg-cyan-500/10 rounded-full">
-                    <Sparkles className="h-5 w-5 text-cyan-400" />
+                    <MessageSquare className="h-5 w-5 text-cyan-400" />
                   </div>
                   <div>
-                    <CardTitle className="text-white text-lg">Legal Compliance Chat</CardTitle>
-                    <CardDescription className="text-gray-400 text-sm">
-                      Real-time analysis and guidance
+                    <CardTitle className="text-white">Legal Compliance Chat</CardTitle>
+                    <CardDescription className="text-gray-400">
+                      Real-time due diligence analysis
                     </CardDescription>
                   </div>
                 </div>
@@ -470,21 +357,27 @@ export default function ComplianceBotPage() {
               </div>
             </CardHeader>
             
-            <CardContent className="flex-1 p-0 flex flex-col">
-              <ScrollArea className="flex-1 p-4" ref={scrollAreaRef}>
-                <div className="space-y-4">
+            <CardContent className="flex-1 p-0 overflow-hidden">
+              <ScrollArea className="h-full p-4" ref={scrollAreaRef}>
+                <div className="space-y-6">
                   {messages.map((message) => (
                     <div
                       key={message.id}
                       className={`flex gap-3 ${message.type === 'user' ? 'justify-end' : 'justify-start'}`}
                     >
-                      {message.type !== 'user' && (
-                        <div className={`p-2 rounded-full bg-gray-800 ${getMessageIconColor(message)}`}>
-                          {getMessageIcon(message)}
+                      {message.type === 'bot' && (
+                        <div className="flex-shrink-0 p-2 rounded-full bg-gray-800">
+                          {message.status === 'processing' ? (
+                            <Clock className="h-4 w-4 text-yellow-400 animate-pulse" />
+                          ) : message.status === 'error' ? (
+                            <XCircle className="h-4 w-4 text-red-400" />
+                          ) : (
+                            <Bot className="h-4 w-4 text-cyan-400" />
+                          )}
                         </div>
                       )}
                       
-                      <div className={`max-w-[80%] ${message.type === 'user' ? 'order-first' : ''}`}>
+                      <div className={`max-w-[85%] ${message.type === 'user' ? 'order-first' : ''}`}>
                         <div
                           className={`p-4 rounded-lg ${
                             message.type === 'user'
@@ -495,9 +388,9 @@ export default function ComplianceBotPage() {
                           }`}
                         >
                           {message.type === 'user' ? (
-                            <div className="text-sm">
+                            <div className="whitespace-pre-line text-sm">
                               {message.content.split('\n').map((line, i) => (
-                                <div key={i} className={line.startsWith('**') ? 'font-semibold' : ''}>
+                                <div key={i} className={line.startsWith('**') ? 'font-semibold mb-1' : 'mb-1'}>
                                   {line.replace(/\*\*/g, '')}
                                 </div>
                               ))}
@@ -507,10 +400,12 @@ export default function ComplianceBotPage() {
                               {message.status === 'processing' ? (
                                 <div className="flex items-center gap-2 text-gray-300">
                                   <div className="animate-spin rounded-full h-4 w-4 border-b-2 border-cyan-500"></div>
-                                  {message.content}
+                                  <span>{message.content}</span>
                                 </div>
                               ) : (
-                                formatMessageContent(message.content)
+                                <div className="space-y-2">
+                                  {formatBotMessage(message.content)}
+                                </div>
                               )}
                             </div>
                           )}
@@ -521,38 +416,39 @@ export default function ComplianceBotPage() {
                       </div>
                       
                       {message.type === 'user' && (
-                        <div className="p-2 rounded-full bg-blue-500/10 text-blue-400">
-                          <User className="h-4 w-4" />
+                        <div className="flex-shrink-0 p-2 rounded-full bg-blue-500/10">
+                          <User className="h-4 w-4 text-blue-400" />
                         </div>
                       )}
                     </div>
                   ))}
+                  <div ref={messagesEndRef} />
                 </div>
               </ScrollArea>
             </CardContent>
           </Card>
         </div>
 
-        {/* Input Form */}
+        {/* Input Form - Takes up 1/4 of the space */}
         <div className="lg:col-span-1">
           <Card className="bg-gray-900 border-gray-800 sticky top-6">
             <CardHeader>
-              <CardTitle className="text-white text-lg">New Analysis Request</CardTitle>
+              <CardTitle className="text-white">New Request</CardTitle>
               <CardDescription className="text-gray-400">
-                Provide details for legal compliance analysis
+                Fill out the form to submit a new analysis request
               </CardDescription>
             </CardHeader>
             <CardContent>
               <form onSubmit={handleSubmit} className="space-y-4">
                 <div className="space-y-2">
                   <label className="text-sm font-medium text-gray-300">
-                    Scope of Due Diligence
+                    Scope of Due Diligence *
                   </label>
                   <Textarea
                     placeholder="E.g., Business acquisition compliance review"
                     value={scope}
                     onChange={(e) => setScope(e.target.value)}
-                    className="bg-gray-800 border-gray-700 text-white placeholder:text-gray-500 text-sm"
+                    className="bg-gray-800 border-gray-700 text-white placeholder:text-gray-500 text-sm resize-none"
                     required
                     rows={3}
                     disabled={isSubmitting}
@@ -561,7 +457,7 @@ export default function ComplianceBotPage() {
 
                 <div className="space-y-2">
                   <label className="text-sm font-medium text-gray-300">
-                    Jurisdiction
+                    Jurisdiction *
                   </label>
                   <Input
                     value={jurisdictions}
@@ -575,13 +471,13 @@ export default function ComplianceBotPage() {
 
                 <div className="space-y-2">
                   <label className="text-sm font-medium text-gray-300">
-                    Areas of Concern
+                    Areas of Concern *
                   </label>
                   <Textarea
                     placeholder="E.g., Anti-money laundering, corporate governance"
                     value={concerns}
                     onChange={(e) => setConcerns(e.target.value)}
-                    className="bg-gray-800 border-gray-700 text-white placeholder:text-gray-500 text-sm"
+                    className="bg-gray-800 border-gray-700 text-white placeholder:text-gray-500 text-sm resize-none"
                     required
                     rows={3}
                     disabled={isSubmitting}
@@ -590,7 +486,7 @@ export default function ComplianceBotPage() {
 
                 <Button
                   type="submit"
-                  disabled={isSubmitting || (currentRequest?.status === 'processing')}
+                  disabled={isSubmitting || activeRequests.size > 0}
                   className="w-full bg-gradient-to-r from-cyan-500 to-blue-500 hover:from-cyan-600 hover:to-blue-600 disabled:opacity-50"
                 >
                   {isSubmitting ? (
@@ -601,10 +497,16 @@ export default function ComplianceBotPage() {
                   ) : (
                     <>
                       <Send className="mr-2 h-4 w-4" />
-                      Analyze Request
+                      Send Request
                     </>
                   )}
                 </Button>
+
+                {activeRequests.size > 0 && (
+                  <div className="text-xs text-yellow-400 text-center">
+                    {activeRequests.size} request(s) processing...
+                  </div>
+                )}
               </form>
             </CardContent>
           </Card>
