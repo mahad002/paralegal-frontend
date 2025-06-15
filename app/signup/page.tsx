@@ -179,13 +179,14 @@ export default function SignupPage() {
             initial={{ scale: 0.8, opacity: 0 }}
             animate={{ scale: 1, opacity: 1 }}
             transition={{ delay: 0.2, duration: 0.5 }}
-            className="flex justify-center items-center gap-4 mb-6"
+            className="flex justify-center items-center mb-6"
           >
-            <div className="p-3 bg-gradient-to-br from-blue-500 to-cyan-500 rounded-xl shadow-lg">
-              <Scale className="w-8 h-8 text-white" />
-            </div>
-            <div className="p-3 bg-gradient-to-br from-cyan-500 to-blue-500 rounded-xl shadow-lg">
-              <Gavel className="w-8 h-8 text-white" />
+            <div className="p-4 bg-gradient-to-br from-slate-800/50 to-slate-700/50 rounded-2xl border border-slate-600/30 shadow-xl">
+              <img 
+                src="/image.png" 
+                alt="Paralegal Logo" 
+                className="h-16 w-auto"
+              />
             </div>
           </motion.div>
           <motion.div
@@ -194,7 +195,7 @@ export default function SignupPage() {
             transition={{ delay: 0.4, duration: 0.5 }}
           >
             <h1 className="text-4xl font-bold text-white font-serif mb-2">
-              Join Paralegal
+              Create Account
             </h1>
             <p className="text-slate-400 text-lg">Create your professional account</p>
           </motion.div>

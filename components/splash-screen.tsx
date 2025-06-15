@@ -20,28 +20,26 @@ export function SplashScreen() {
         initial={{ scale: 0.5, opacity: 0 }}
         animate={{ scale: 1, opacity: 1 }}
         transition={{ delay: 0.2, duration: 0.8, ease: "easeOut" }}
-        className="relative flex items-center gap-6 mb-8"
+        className="relative flex items-center justify-center mb-8"
       >
-        <div className="relative">
+        <div className="relative p-8 rounded-3xl bg-gradient-to-br from-slate-800/50 to-slate-700/50 backdrop-blur-sm border border-slate-600/30 shadow-2xl">
           <motion.div
-            animate={{ rotate: 360 }}
-            transition={{ duration: 20, repeat: Infinity, ease: "linear" }}
-            className="absolute inset-0 rounded-full bg-gradient-to-r from-blue-500/20 to-cyan-500/20 blur-xl"
+            animate={{ 
+              scale: [1, 1.05, 1],
+              rotate: [0, 2, -2, 0]
+            }}
+            transition={{ 
+              duration: 4, 
+              repeat: Infinity, 
+              ease: "easeInOut" 
+            }}
+            className="relative"
           />
-          <div className="relative p-6 rounded-2xl bg-gradient-to-br from-blue-500 to-cyan-500 shadow-2xl">
-            <Scale className="w-12 h-12 text-white" />
-          </div>
-        </div>
-        
-        <div className="relative">
-          <motion.div
-            animate={{ rotate: -360 }}
-            transition={{ duration: 25, repeat: Infinity, ease: "linear" }}
-            className="absolute inset-0 rounded-full bg-gradient-to-r from-cyan-500/20 to-blue-500/20 blur-xl"
+          <img 
+            src="/image.png" 
+            alt="Paralegal Logo" 
+            className="h-24 w-auto relative z-10"
           />
-          <div className="relative p-6 rounded-2xl bg-gradient-to-br from-cyan-500 to-blue-500 shadow-2xl">
-            <Gavel className="w-12 h-12 text-white" />
-          </div>
         </div>
       </motion.div>
       
@@ -52,11 +50,6 @@ export function SplashScreen() {
         transition={{ delay: 0.6, duration: 0.8 }}
         className="text-center mb-6"
       >
-        <h1 className="text-5xl md:text-6xl font-bold text-white font-serif mb-4">
-          <span className="bg-gradient-to-r from-blue-400 to-cyan-400 bg-clip-text text-transparent">
-            Paralegal
-          </span>
-        </h1>
         <div className="flex items-center justify-center gap-2 mb-2">
           <Sparkles className="w-5 h-5 text-cyan-400" />
           <p className="text-xl text-slate-300 font-medium">Professional Suite</p>

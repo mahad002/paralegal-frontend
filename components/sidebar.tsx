@@ -62,13 +62,6 @@ export function Sidebar({ onClose }: SidebarProps) {
       {/* Header */}
       <div className="p-6 flex items-center justify-between border-b border-slate-700/50">
         <div className="flex items-center gap-3">
-          <div className="p-2 bg-gradient-to-br from-blue-500 to-cyan-500 rounded-xl shadow-lg">
-            <Scale className="h-6 w-6 text-white" />
-          </div>
-          <div>
-            <span className="font-bold text-xl text-white font-serif">Paralegal</span>
-            <p className="text-xs text-slate-400 font-medium">Professional Suite</p>
-          </div>
         </div>
         <button
           onClick={onClose}
