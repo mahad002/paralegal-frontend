@@ -80,7 +80,10 @@ async function fetchAPI<T>(endpoint: string, options: RequestInit = {}): Promise
         requestCache.delete(cacheKey);
       }
     }
-  })();
+  })().catch(() => {
+    // Defensive catch to prevent unhandled rejections
+    return { error: 'Request failed unexpectedly' };
+  });
 
   // Cache GET requests
   if (cacheKey) {
