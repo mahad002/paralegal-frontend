@@ -54,7 +54,7 @@ export function SplashScreen() {
       >
         <h1 className="text-5xl md:text-6xl font-bold text-white font-serif mb-4">
           <span className="bg-gradient-to-r from-blue-400 to-cyan-400 bg-clip-text text-transparent">
-            LegalPro
+            Paralegal
           </span>
         </h1>
         <div className="flex items-center justify-center gap-2 mb-2">

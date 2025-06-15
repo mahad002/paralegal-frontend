@@ -66,7 +66,7 @@ export function Sidebar({ onClose }: SidebarProps) {
             <Scale className="h-6 w-6 text-white" />
           </div>
           <div>
-            <span className="font-bold text-xl text-white font-serif">LegalPro</span>
+            <span className="font-bold text-xl text-white font-serif">Paralegal</span>
             <p className="text-xs text-slate-400 font-medium">Professional Suite</p>
           </div>
         </div>

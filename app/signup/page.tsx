@@ -194,7 +194,7 @@ export default function SignupPage() {
             transition={{ delay: 0.4, duration: 0.5 }}
           >
             <h1 className="text-4xl font-bold text-white font-serif mb-2">
-              Join LegalPro
+              Join Paralegal
             </h1>
             <p className="text-slate-400 text-lg">Create your professional account</p>
           </motion.div>
