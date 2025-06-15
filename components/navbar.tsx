@@ -21,13 +21,13 @@ export function Navbar({ onMenuClick, isSidebarOpen }: NavbarProps) {
   const { user, logout } = useAuth();
 
   return (
-    <header className="sticky top-0 z-40 glass-card border-b border-slate-700/50">
+    <header className="sticky top-0 z-40 navbar-glass">
       <div className="container flex h-16 items-center justify-between px-4">
         <div className="flex items-center gap-4">
           <Button
             variant="ghost"
             size="icon"
-            className="lg:hidden text-slate-400 hover:text-white hover:bg-slate-800/50"
+            className="lg:hidden text-slate-300 hover:text-gold-100 hover:bg-navy-800/50"
             onClick={onMenuClick}
           >
             <Menu className="h-6 w-6" />
@@ -37,7 +37,7 @@ export function Navbar({ onMenuClick, isSidebarOpen }: NavbarProps) {
               <Button
                 variant="ghost"
                 size="icon"
-                className="hidden lg:flex text-slate-400 hover:text-white hover:bg-slate-800/50"
+                className="hidden lg:flex text-slate-300 hover:text-gold-100 hover:bg-navy-800/50"
                 onClick={onMenuClick}
               >
                 <Menu className="h-6 w-6" />
@@ -45,7 +45,7 @@ export function Navbar({ onMenuClick, isSidebarOpen }: NavbarProps) {
               
               {/* Logo and Brand Name when sidebar is closed */}
               <div className="hidden lg:flex items-center gap-3 ml-2">
-                <div className="p-2 bg-gradient-to-br from-slate-800/50 to-slate-700/50 rounded-lg border border-slate-600/30">
+                <div className="p-2 bg-gradient-to-br from-navy-800/50 to-navy-700/50 rounded-lg border border-gold-500/30 shadow-lg">
                   <Image 
                     src="/image.png" 
                     alt="Paralegal Logo" 
@@ -54,7 +54,7 @@ export function Navbar({ onMenuClick, isSidebarOpen }: NavbarProps) {
                     className="w-6 h-6"
                   />
                 </div>
-                <span className="text-xl font-bold text-white font-serif">
+                <span className="text-xl font-bold text-gold-100 legal-serif">
                   Paralegal
                 </span>
               </div>
@@ -76,7 +76,7 @@ export function Navbar({ onMenuClick, isSidebarOpen }: NavbarProps) {
           <Button
             variant="ghost"
             size="icon"
-            className="relative text-slate-400 hover:text-white hover:bg-slate-800/50"
+            className="relative text-slate-300 hover:text-gold-100 hover:bg-navy-800/50"
           >
             <Bell className="h-5 w-5" />
             <span className="absolute -top-1 -right-1 h-3 w-3 bg-red-500 rounded-full text-xs flex items-center justify-center text-white">
@@ -90,13 +90,13 @@ export function Navbar({ onMenuClick, isSidebarOpen }: NavbarProps) {
               <DropdownMenuTrigger asChild>
                 <Button
                   variant="ghost"
-                  className="flex items-center gap-3 px-3 py-2 h-auto text-slate-400 hover:text-white hover:bg-slate-800/50"
+                  className="flex items-center gap-3 px-3 py-2 h-auto text-slate-300 hover:text-gold-100 hover:bg-navy-800/50"
                 >
-                  <div className="w-8 h-8 rounded-full bg-gradient-to-br from-blue-500 to-cyan-500 flex items-center justify-center text-white font-semibold text-sm">
+                  <div className="w-8 h-8 rounded-full bg-gradient-to-br from-gold-500 to-gold-600 flex items-center justify-center text-navy-900 font-semibold text-sm shadow-lg">
                     {user.name.charAt(0).toUpperCase()}
                   </div>
                   <div className="hidden md:block text-left">
-                    <p className="text-sm font-medium text-white">{user.name}</p>
+                    <p className="text-sm font-medium text-gold-100">{user.name}</p>
                     <p className="text-xs text-slate-400 capitalize">
                       {user.role.replace('_', ' ')}
                     </p>
@@ -105,20 +105,20 @@ export function Navbar({ onMenuClick, isSidebarOpen }: NavbarProps) {
               </DropdownMenuTrigger>
               <DropdownMenuContent 
                 align="end" 
-                className="w-56 bg-slate-900/95 backdrop-blur-sm border-slate-700/50"
+                className="w-56 bg-navy-900/95 backdrop-blur-sm border-navy-700/50"
               >
-                <DropdownMenuLabel className="text-slate-300">
+                <DropdownMenuLabel className="text-gold-100">
                   My Account
                 </DropdownMenuLabel>
-                <DropdownMenuSeparator className="bg-slate-700/50" />
+                <DropdownMenuSeparator className="bg-navy-700/50" />
                 <DropdownMenuItem 
-                  className="text-slate-300 hover:bg-slate-800/50 hover:text-white cursor-pointer"
+                  className="text-slate-300 hover:bg-navy-800/50 hover:text-gold-100 cursor-pointer"
                   onClick={() => window.location.href = '/profile'}
                 >
                   <Settings className="mr-2 h-4 w-4" />
                   Settings
                 </DropdownMenuItem>
-                <DropdownMenuSeparator className="bg-slate-700/50" />
+                <DropdownMenuSeparator className="bg-navy-700/50" />
                 <DropdownMenuItem 
                   className="text-red-400 hover:bg-red-500/10 hover:text-red-300 cursor-pointer"
                   onClick={logout}

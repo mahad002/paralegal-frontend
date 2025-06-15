@@ -60,22 +60,22 @@ export function Sidebar({ onClose }: SidebarProps) {
       className="fixed inset-y-0 left-0 w-[280px] glass-card flex flex-col shadow-2xl z-50"
     >
       {/* Header */}
-      <div className="p-6 flex items-center justify-between border-b border-slate-700/50">
+      <div className="p-6 flex items-center justify-between border-b border-navy-700/50">
         <div className="flex items-center gap-3">
-          <div className="p-2 bg-gradient-to-br from-slate-800/50 to-slate-700/50 rounded-lg border border-slate-600/30">
+          <div className="p-2 bg-gradient-to-br from-navy-800/50 to-navy-700/50 rounded-lg border border-gold-500/30 shadow-lg">
             <img 
               src="/image.png" 
               alt="Paralegal Logo" 
               className="h-6 w-6"
             />
           </div>
-          <span className="text-xl font-bold text-white font-serif">
+          <span className="text-xl font-bold text-gold-100 legal-serif">
             Paralegal
           </span>
         </div>
         <button
           onClick={onClose}
-          className="p-2 rounded-lg hover:bg-slate-800/50 transition-colors duration-200 text-slate-400 hover:text-white"
+          className="p-2 rounded-lg hover:bg-navy-800/50 transition-colors duration-200 text-slate-300 hover:text-gold-100"
         >
           <X className="h-5 w-5" />
         </button>
@@ -102,8 +102,8 @@ export function Sidebar({ onClose }: SidebarProps) {
                   <div className={cn(
                     "p-2 rounded-lg transition-all duration-200",
                     isActive 
-                      ? "bg-blue-500/20 text-blue-400" 
-                      : "bg-slate-800/30 text-slate-400 group-hover:bg-slate-700/50 group-hover:text-white"
+                      ? "bg-gold-500/20 text-gold-400 shadow-lg" 
+                      : "bg-navy-800/30 text-slate-400 group-hover:bg-navy-700/50 group-hover:text-gold-100"
                   )}>
                     <item.icon className="h-4 w-4" />
                   </div>
@@ -118,9 +118,9 @@ export function Sidebar({ onClose }: SidebarProps) {
                   <motion.div
                     initial={{ scale: 0 }}
                     animate={{ scale: 1 }}
-                    className="p-1 rounded-full bg-blue-500/20"
+                    className="p-1 rounded-full bg-gold-500/20"
                   >
-                    <ChevronRight className="h-3 w-3 text-blue-400" />
+                    <ChevronRight className="h-3 w-3 text-gold-400" />
                   </motion.div>
                 )}
               </motion.button>
@@ -131,13 +131,13 @@ export function Sidebar({ onClose }: SidebarProps) {
 
       {/* User Profile */}
       {user && (
-        <div className="p-4 border-t border-slate-700/50">
-          <div className="flex items-center gap-3 p-3 rounded-xl bg-gradient-to-r from-slate-800/50 to-slate-700/50 border border-slate-600/30">
-            <div className="p-2 rounded-full bg-gradient-to-br from-blue-500 to-cyan-500 shadow-lg">
+        <div className="p-4 border-t border-navy-700/50">
+          <div className="flex items-center gap-3 p-3 rounded-xl bg-gradient-to-r from-navy-800/50 to-navy-700/50 border border-gold-500/30 shadow-lg">
+            <div className="p-2 rounded-full bg-gradient-to-br from-gold-500 to-gold-600 shadow-lg">
               <User className="h-4 w-4 text-white" />
             </div>
             <div className="flex-1 min-w-0">
-              <p className="text-sm font-semibold text-white truncate">
+              <p className="text-sm font-semibold text-gold-100 truncate">
                 {user.name}
               </p>
               <div className="flex items-center gap-2">

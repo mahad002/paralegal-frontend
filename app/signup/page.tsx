@@ -162,9 +162,9 @@ export default function SignupPage() {
     <div className="min-h-screen flex items-center justify-center p-4 relative overflow-hidden">
       {/* Background Pattern */}
       <div className="absolute inset-0 opacity-20">
-        <div className="absolute inset-0 bg-[radial-gradient(circle_at_30%_20%,rgba(59,130,246,0.1),transparent_50%)]" />
-        <div className="absolute inset-0 bg-[radial-gradient(circle_at_70%_80%,rgba(6,182,212,0.1),transparent_50%)]" />
-        <div className="absolute inset-0 bg-[linear-gradient(45deg,transparent_25%,rgba(59,130,246,0.05)_50%,transparent_75%)]" />
+        <div className="absolute inset-0 bg-[radial-gradient(circle_at_30%_20%,rgba(245,158,11,0.1),transparent_50%)]" />
+        <div className="absolute inset-0 bg-[radial-gradient(circle_at_70%_80%,rgba(30,64,175,0.1),transparent_50%)]" />
+        <div className="absolute inset-0 bg-[linear-gradient(45deg,transparent_25%,rgba(245,158,11,0.05)_50%,transparent_75%)]" />
       </div>
 
       <motion.div
@@ -181,7 +181,7 @@ export default function SignupPage() {
             transition={{ delay: 0.2, duration: 0.5 }}
             className="flex justify-center items-center mb-6"
           >
-            <div className="p-4 bg-gradient-to-br from-slate-800/50 to-slate-700/50 rounded-2xl border border-slate-600/30 shadow-xl">
+            <div className="p-4 bg-gradient-to-br from-navy-800/50 to-navy-700/50 rounded-2xl border border-gold-500/30 shadow-xl">
               <img 
                 src="/image.png" 
                 alt="Paralegal Logo" 
@@ -197,7 +197,7 @@ export default function SignupPage() {
             <h1 className="text-4xl font-bold text-white font-serif mb-2">
               Create Account
             </h1>
-            <p className="text-slate-400 text-lg">Create your professional account</p>
+            <p className="text-slate-300 text-lg">Create your professional account</p>
           </motion.div>
         </div>
 
@@ -211,7 +211,7 @@ export default function SignupPage() {
           <form onSubmit={handleSubmit} className="space-y-6">
             <div className="space-y-4">
               <div className="space-y-2">
-                <label className="text-sm font-medium text-slate-300">Full Name</label>
+                <label className="text-sm font-medium text-gold-100">Full Name</label>
                 <div className="relative">
                   <User className="absolute left-3 top-1/2 transform -translate-y-1/2 text-slate-400 h-5 w-5" />
                   <Input
@@ -227,7 +227,7 @@ export default function SignupPage() {
               </div>
               
               <div className="space-y-2">
-                <label className="text-sm font-medium text-slate-300">Email Address</label>
+                <label className="text-sm font-medium text-gold-100">Email Address</label>
                 <div className="relative">
                   <Mail className="absolute left-3 top-1/2 transform -translate-y-1/2 text-slate-400 h-5 w-5" />
                   <Input
@@ -243,7 +243,7 @@ export default function SignupPage() {
               </div>
               
               <div className="space-y-2">
-                <label className="text-sm font-medium text-slate-300">Password</label>
+                <label className="text-sm font-medium text-gold-100">Password</label>
                 <div className="relative">
                   <Lock className="absolute left-3 top-1/2 transform -translate-y-1/2 text-slate-400 h-5 w-5" />
                   <Input
@@ -258,7 +258,7 @@ export default function SignupPage() {
                   <button
                     type="button"
                     onClick={() => setShowPassword(!showPassword)}
-                    className="absolute right-3 top-1/2 transform -translate-y-1/2 text-slate-400 hover:text-white transition-colors"
+                    className="absolute right-3 top-1/2 transform -translate-y-1/2 text-slate-400 hover:text-gold-100 transition-colors"
                   >
                     {showPassword ? <EyeOff className="h-5 w-5" /> : <Eye className="h-5 w-5" />}
                   </button>
@@ -272,7 +272,7 @@ export default function SignupPage() {
                         <div
                           key={i}
                           className={`h-1 flex-1 rounded-full transition-colors ${
-                            i < passwordStrength ? strengthColors[passwordStrength - 1] : 'bg-slate-700'
+                            i < passwordStrength ? strengthColors[passwordStrength - 1] : 'bg-navy-700'
                           }`}
                         />
                       ))}
@@ -287,7 +287,7 @@ export default function SignupPage() {
               </div>
               
               <div className="space-y-2">
-                <label className="text-sm font-medium text-slate-300">Professional Role</label>
+                <label className="text-sm font-medium text-gold-100">Professional Role</label>
                 <div className="relative">
                   <Briefcase className="absolute left-3 top-1/2 transform -translate-y-1/2 text-slate-400 h-5 w-5 z-10" />
                   <Select 
@@ -298,12 +298,12 @@ export default function SignupPage() {
                     <SelectTrigger className="pl-10 professional-input h-12">
                       <SelectValue placeholder="Select your role" />
                     </SelectTrigger>
-                    <SelectContent className="bg-slate-900/95 backdrop-blur-sm border-slate-700/50">
+                    <SelectContent className="bg-navy-900/95 backdrop-blur-sm border-navy-700/50">
                       {roleOptions.map((option) => (
                         <SelectItem 
                           key={option.value} 
                           value={option.value} 
-                          className="text-white hover:bg-slate-800/50"
+                          className="text-slate-100 hover:bg-navy-800/50"
                         >
                           <div>
                             <div className="font-medium">{option.label}</div>
@@ -318,8 +318,8 @@ export default function SignupPage() {
             </div>
 
             {/* Password Requirements */}
-            <div className="space-y-3 p-4 bg-slate-800/30 rounded-xl border border-slate-700/30">
-              <p className="text-sm font-medium text-slate-300">Password requirements:</p>
+            <div className="space-y-3 p-4 bg-navy-800/30 rounded-xl border border-navy-700/30">
+              <p className="text-sm font-medium text-gold-100">Password requirements:</p>
               <div className="grid grid-cols-1 gap-2 text-xs">
                 {[
                   { check: password.length >= 8, text: 'At least 8 characters' },
@@ -328,8 +328,8 @@ export default function SignupPage() {
                   { check: /\d/.test(password), text: 'One number' },
                 ].map((req, index) => (
                   <div key={index} className="flex items-center gap-2">
-                    <CheckCircle className={`h-3 w-3 ${req.check ? 'text-green-400' : 'text-slate-500'}`} />
-                    <span className={req.check ? 'text-green-400' : 'text-slate-400'}>
+                    <CheckCircle className={`h-3 w-3 ${req.check ? 'text-green-300' : 'text-slate-500'}`} />
+                    <span className={req.check ? 'text-green-300' : 'text-slate-400'}>
                       {req.text}
                     </span>
                   </div>
@@ -340,11 +340,11 @@ export default function SignupPage() {
             <Button
               type="submit"
               disabled={isLoading || passwordStrength < 3}
-              className="w-full professional-button h-12 text-white font-semibold"
+              className="w-full gold-button h-12 font-semibold"
             >
               {isLoading ? (
                 <div className="flex items-center gap-2">
-                  <div className="w-4 h-4 border-2 border-white/30 border-t-white rounded-full animate-spin" />
+                  <div className="w-4 h-4 border-2 border-navy-900/30 border-t-navy-900 rounded-full animate-spin" />
                   Creating account...
                 </div>
               ) : (
@@ -354,9 +354,9 @@ export default function SignupPage() {
           </form>
 
           <div className="mt-8 pt-6 border-t border-slate-700/50 text-center">
-            <p className="text-slate-400">
+            <p className="text-slate-300">
               Already have an account?{' '}
-              <Link href="/login" className="text-blue-400 hover:text-blue-300 transition-colors font-medium">
+              <Link href="/login" className="text-gold-400 hover:text-gold-300 transition-colors font-medium">
                 Sign in
               </Link>
             </p>
@@ -370,7 +370,7 @@ export default function SignupPage() {
           transition={{ delay: 0.8, duration: 0.5 }}
           className="mt-6 text-center"
         >
-          <div className="flex items-center justify-center gap-2 text-slate-500 text-sm">
+          <div className="flex items-center justify-center gap-2 text-slate-400 text-sm">
             <Shield className="h-4 w-4" />
             <span>Your data is protected with enterprise-grade security</span>
           </div>

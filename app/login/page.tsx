@@ -93,9 +93,9 @@ export default function LoginPage() {
     <div className="min-h-screen flex items-center justify-center p-4 relative overflow-hidden">
       {/* Background Pattern */}
       <div className="absolute inset-0 opacity-20">
-        <div className="absolute inset-0 bg-[radial-gradient(circle_at_30%_20%,rgba(59,130,246,0.1),transparent_50%)]" />
-        <div className="absolute inset-0 bg-[radial-gradient(circle_at_70%_80%,rgba(6,182,212,0.1),transparent_50%)]" />
-        <div className="absolute inset-0 bg-[linear-gradient(45deg,transparent_25%,rgba(59,130,246,0.05)_50%,transparent_75%)]" />
+        <div className="absolute inset-0 bg-[radial-gradient(circle_at_30%_20%,rgba(245,158,11,0.1),transparent_50%)]" />
+        <div className="absolute inset-0 bg-[radial-gradient(circle_at_70%_80%,rgba(30,64,175,0.1),transparent_50%)]" />
+        <div className="absolute inset-0 bg-[linear-gradient(45deg,transparent_25%,rgba(245,158,11,0.05)_50%,transparent_75%)]" />
       </div>
 
       <motion.div
@@ -112,7 +112,7 @@ export default function LoginPage() {
             transition={{ delay: 0.2, duration: 0.5 }}
             className="flex justify-center items-center mb-6"
           >
-            <div className="p-4 bg-gradient-to-br from-slate-800/50 to-slate-700/50 rounded-2xl border border-slate-600/30 shadow-xl">
+            <div className="p-4 bg-gradient-to-br from-navy-800/50 to-navy-700/50 rounded-2xl border border-gold-500/30 shadow-xl">
               <img 
                 src="/image.png" 
                 alt="Paralegal Logo" 
@@ -128,7 +128,7 @@ export default function LoginPage() {
             <h1 className="text-4xl font-bold text-white font-serif mb-2">
               Welcome Back
             </h1>
-            <p className="text-slate-400 text-lg">Sign in to your professional account</p>
+            <p className="text-slate-300 text-lg">Sign in to your professional account</p>
           </motion.div>
         </div>
 
@@ -146,8 +146,8 @@ export default function LoginPage() {
               className="mb-6 p-4 bg-red-500/10 border border-red-500/20 rounded-xl"
             >
               <div className="flex items-center gap-2">
-                <Shield className="h-4 w-4 text-red-400" />
-                <p className="text-red-400 text-sm">{error}</p>
+                <Shield className="h-4 w-4 text-red-300" />
+                <p className="text-red-300 text-sm">{error}</p>
               </div>
             </motion.div>
           )}
@@ -155,7 +155,7 @@ export default function LoginPage() {
           <form onSubmit={handleSubmit} className="space-y-6">
             <div className="space-y-4">
               <div className="space-y-2">
-                <label className="text-sm font-medium text-slate-300">Email Address</label>
+                <label className="text-sm font-medium text-gold-100">Email Address</label>
                 <div className="relative">
                   <Mail className="absolute left-3 top-1/2 transform -translate-y-1/2 text-slate-400 h-5 w-5" />
                   <Input
@@ -171,7 +171,7 @@ export default function LoginPage() {
               </div>
               
               <div className="space-y-2">
-                <label className="text-sm font-medium text-slate-300">Password</label>
+                <label className="text-sm font-medium text-gold-100">Password</label>
                 <div className="relative">
                   <Lock className="absolute left-3 top-1/2 transform -translate-y-1/2 text-slate-400 h-5 w-5" />
                   <Input
@@ -186,7 +186,7 @@ export default function LoginPage() {
                   <button
                     type="button"
                     onClick={() => setShowPassword(!showPassword)}
-                    className="absolute right-3 top-1/2 transform -translate-y-1/2 text-slate-400 hover:text-white transition-colors"
+                    className="absolute right-3 top-1/2 transform -translate-y-1/2 text-slate-400 hover:text-gold-100 transition-colors"
                   >
                     {showPassword ? <EyeOff className="h-5 w-5" /> : <Eye className="h-5 w-5" />}
                   </button>
@@ -195,13 +195,13 @@ export default function LoginPage() {
             </div>
 
             <div className="flex items-center justify-between text-sm">
-              <label className="flex items-center gap-2 text-slate-400">
-                <input type="checkbox" className="rounded border-slate-600 bg-slate-800" />
+              <label className="flex items-center gap-2 text-slate-300">
+                <input type="checkbox" className="rounded border-navy-600 bg-navy-800" />
                 Remember me
               </label>
               <Link 
                 href="/forgot-password" 
-                className="text-blue-400 hover:text-blue-300 transition-colors font-medium"
+                className="text-gold-400 hover:text-gold-300 transition-colors font-medium"
               >
                 Forgot password?
               </Link>
@@ -210,11 +210,11 @@ export default function LoginPage() {
             <Button
               type="submit"
               disabled={isSubmitting || isLoading}
-              className="w-full professional-button h-12 text-white font-semibold"
+              className="w-full gold-button h-12 font-semibold"
             >
               {isSubmitting || isLoading ? (
                 <div className="flex items-center gap-2">
-                  <div className="w-4 h-4 border-2 border-white/30 border-t-white rounded-full animate-spin" />
+                  <div className="w-4 h-4 border-2 border-navy-900/30 border-t-navy-900 rounded-full animate-spin" />
                   Signing in...
                 </div>
               ) : (
@@ -224,9 +224,9 @@ export default function LoginPage() {
           </form>
 
           <div className="mt-8 pt-6 border-t border-slate-700/50 text-center">
-            <p className="text-slate-400">
+            <p className="text-slate-300">
               Don't have an account?{' '}
-              <Link href="/signup" className="text-blue-400 hover:text-blue-300 transition-colors font-medium">
+              <Link href="/signup" className="text-gold-400 hover:text-gold-300 transition-colors font-medium">
                 Create one now
               </Link>
             </p>
@@ -240,7 +240,7 @@ export default function LoginPage() {
           transition={{ delay: 0.8, duration: 0.5 }}
           className="mt-6 text-center"
         >
-          <div className="flex items-center justify-center gap-2 text-slate-500 text-sm">
+          <div className="flex items-center justify-center gap-2 text-slate-400 text-sm">
             <Shield className="h-4 w-4" />
             <span>Secured with enterprise-grade encryption</span>
           </div>

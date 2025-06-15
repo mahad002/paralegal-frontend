@@ -5,22 +5,24 @@ import { cva, type VariantProps } from "class-variance-authority"
 import { cn } from "@/lib/utils"
 
 const buttonVariants = cva(
-  "inline-flex items-center justify-center gap-2 whitespace-nowrap rounded-xl text-sm font-semibold transition-all duration-200 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-blue-500 focus-visible:ring-offset-2 focus-visible:ring-offset-slate-900 disabled:pointer-events-none disabled:opacity-50 [&_svg]:pointer-events-none [&_svg]:size-4 [&_svg]:shrink-0",
+  "inline-flex items-center justify-center gap-2 whitespace-nowrap rounded-xl text-sm font-semibold transition-all duration-200 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-gold-500 focus-visible:ring-offset-2 focus-visible:ring-offset-navy-900 disabled:pointer-events-none disabled:opacity-50 [&_svg]:pointer-events-none [&_svg]:size-4 [&_svg]:shrink-0",
   {
     variants: {
       variant: {
         default:
-          "bg-gradient-to-r from-blue-600 to-blue-700 text-white shadow-lg hover:from-blue-500 hover:to-blue-600 hover:shadow-xl hover:-translate-y-0.5 active:translate-y-0",
+          "bg-gradient-to-r from-navy-700 to-navy-800 text-gold-100 shadow-lg hover:from-navy-600 hover:to-navy-700 hover:shadow-xl hover:-translate-y-0.5 active:translate-y-0 border border-navy-600/50",
+        primary:
+          "gold-button",
         destructive:
-          "bg-gradient-to-r from-red-600 to-red-700 text-white shadow-lg hover:from-red-500 hover:to-red-600 hover:shadow-xl hover:-translate-y-0.5 active:translate-y-0",
+          "bg-gradient-to-r from-red-600 to-red-700 text-white shadow-lg hover:from-red-500 hover:to-red-600 hover:shadow-xl hover:-translate-y-0.5 active:translate-y-0 border border-red-500/50",
         outline:
-          "border border-slate-600 bg-slate-800/50 text-slate-300 shadow-sm hover:bg-slate-700/50 hover:text-white hover:border-slate-500",
+          "border border-navy-600/50 bg-navy-800/50 text-slate-300 shadow-sm hover:bg-navy-700/50 hover:text-gold-100 hover:border-gold-500/50",
         secondary:
-          "bg-gradient-to-r from-slate-700 to-slate-800 text-slate-200 shadow-md hover:from-slate-600 hover:to-slate-700 hover:text-white",
+          "bg-gradient-to-r from-navy-700 to-navy-800 text-slate-200 shadow-md hover:from-navy-600 hover:to-navy-700 hover:text-gold-100 border border-navy-600/50",
         ghost: 
-          "text-slate-400 hover:bg-slate-800/50 hover:text-white",
+          "text-slate-300 hover:bg-navy-800/50 hover:text-gold-100",
         link: 
-          "text-blue-400 underline-offset-4 hover:underline hover:text-blue-300",
+          "text-gold-400 underline-offset-4 hover:underline hover:text-gold-300",
       },
       size: {
         default: "h-10 px-4 py-2",
