@@ -5,7 +5,7 @@ import { motion } from 'framer-motion';
 import { cn } from '@/lib/utils';
 import { ButtonLoader } from './loading-states';
 
-interface ModernButtonProps extends ButtonHTMLAttributes<HTMLButtonElement> {
+interface ModernButtonProps extends Omit<ButtonHTMLAttributes<HTMLButtonElement>, 'onDrag'> {
   children?: ReactNode;
   variant?: 'primary' | 'secondary' | 'ghost' | 'danger';
   size?: 'sm' | 'md' | 'lg';
