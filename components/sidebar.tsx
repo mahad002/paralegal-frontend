@@ -62,6 +62,16 @@ export function Sidebar({ onClose }: SidebarProps) {
       {/* Header */}
       <div className="p-6 flex items-center justify-between border-b border-slate-700/50">
         <div className="flex items-center gap-3">
+          <div className="p-2 bg-gradient-to-br from-slate-800/50 to-slate-700/50 rounded-lg border border-slate-600/30">
+            <img 
+              src="/image.png" 
+              alt="Paralegal Logo" 
+              className="h-6 w-6"
+            />
+          </div>
+          <span className="text-xl font-bold text-white font-serif">
+            Paralegal
+          </span>
         </div>
         <button
           onClick={onClose}

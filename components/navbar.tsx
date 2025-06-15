@@ -2,6 +2,7 @@ import { Menu, Bell, Search, Settings, LogOut } from 'lucide-react';
 import { Button } from './ui/button';
 import { Input } from './ui/input';
 import { useAuth } from '@/contexts/AuthContext';
+import Image from 'next/image';
 import {
   DropdownMenu,
   DropdownMenuContent,
@@ -32,14 +33,32 @@ export function Navbar({ onMenuClick, isSidebarOpen }: NavbarProps) {
             <Menu className="h-6 w-6" />
           </Button>
           {!isSidebarOpen && (
-            <Button
-              variant="ghost"
-              size="icon"
-              className="hidden lg:flex text-slate-400 hover:text-white hover:bg-slate-800/50"
-              onClick={onMenuClick}
-            >
-              <Menu className="h-6 w-6" />
-            </Button>
+            <>
+              <Button
+                variant="ghost"
+                size="icon"
+                className="hidden lg:flex text-slate-400 hover:text-white hover:bg-slate-800/50"
+                onClick={onMenuClick}
+              >
+                <Menu className="h-6 w-6" />
+              </Button>
+              
+              {/* Logo and Brand Name when sidebar is closed */}
+              <div className="hidden lg:flex items-center gap-3 ml-2">
+                <div className="p-2 bg-gradient-to-br from-slate-800/50 to-slate-700/50 rounded-lg border border-slate-600/30">
+                  <Image 
+                    src="/image.png" 
+                    alt="Paralegal Logo" 
+                    width={24}
+                    height={24}
+                    className="w-6 h-6"
+                  />
+                </div>
+                <span className="text-xl font-bold text-white font-serif">
+                  Paralegal
+                </span>
+              </div>
+            </>
           )}
           
           {/* Search Bar */}
@@ -47,7 +66,7 @@ export function Navbar({ onMenuClick, isSidebarOpen }: NavbarProps) {
             <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 text-slate-400 h-4 w-4" />
             <Input
               placeholder="Search cases, notes, or documents..."
-              className="pl-10 w-80 professional-input"
+              className={`pl-10 professional-input ${!isSidebarOpen ? 'w-64' : 'w-80'}`}
             />
           </div>
         </div>
