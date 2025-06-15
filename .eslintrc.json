@@ -1,28 +1,9 @@
 {
   "extends": [
-    "eslint:recommended",
-    "@typescript-eslint/recommended",
     "next/core-web-vitals"
-  ],
-  "parser": "@typescript-eslint/parser",
-  "parserOptions": {
-    "ecmaVersion": 2020,
-    "sourceType": "module",
-    "ecmaFeatures": {
-      "jsx": true
-    }
-  },
-  "plugins": [
-    "@typescript-eslint"
   ],
   "rules": {
     "react/no-unescaped-entities": "off",
-    "@next/next/no-img-element": "off",
-    "@typescript-eslint/no-unused-vars": "error"
-  },
-  "settings": {
-    "react": {
-      "version": "detect"
-    }
+    "@next/next/no-img-element": "off"
   }
 }

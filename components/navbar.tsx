@@ -23,9 +23,9 @@ export function Navbar({ onMenuClick, isSidebarOpen }: NavbarProps) {
             variant="ghost"
             size="sm"
             onClick={onMenuClick}
-            icon={<Menu className="h-5 w-5" />}
             className="lg:hidden"
           >
+            <Menu className="h-5 w-5" />
             <span className="sr-only">Toggle menu</span>
           </ModernButton>
           {!isSidebarOpen && (
@@ -33,9 +33,9 @@ export function Navbar({ onMenuClick, isSidebarOpen }: NavbarProps) {
               variant="ghost"
               size="sm"
               onClick={onMenuClick}
-              icon={<Menu className="h-5 w-5" />}
               className="hidden lg:flex"
             >
+              <Menu className="h-5 w-5" />
               <span className="sr-only">Toggle menu</span>
             </ModernButton>
           )}
@@ -56,9 +56,9 @@ export function Navbar({ onMenuClick, isSidebarOpen }: NavbarProps) {
           <ModernButton
             variant="ghost"
             size="sm"
-            icon={<Bell className="h-5 w-5" />}
             className="relative"
           >
+            <Bell className="h-5 w-5" />
             <span className="sr-only">Notifications</span>
             <span className="absolute -top-1 -right-1 w-2 h-2 bg-red-500 rounded-full" />
           </ModernButton>
