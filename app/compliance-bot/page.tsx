@@ -134,15 +134,16 @@ export default function ComplianceBotPage() {
     if (activeRequests.size === 0) return;
 
     const interval = setInterval(() => {
-      messages.forEach(msg => {
-        if (msg.requestId && msg.status === 'processing' && activeRequests.has(msg.requestId)) {
-          checkRequestStatus(msg.requestId, msg.id);
+      Array.from(activeRequests).forEach(requestId => {
+        const message = messages.find(msg => msg.requestId === requestId && msg.status === 'processing');
+        if (message) {
+          checkRequestStatus(requestId, message.id);
         }
       });
     }, 5000);
 
     return () => clearInterval(interval);
-  }, [activeRequests, messages, checkRequestStatus]);
+  }, [activeRequests, checkRequestStatus, messages]);
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
