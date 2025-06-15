@@ -2,7 +2,6 @@ import { Menu, Bell, Search, Settings, LogOut } from 'lucide-react';
 import { Button } from './ui/button';
 import { Input } from './ui/input';
 import { useAuth } from '@/contexts/AuthContext';
-import Image from 'next/image';
 import {
   DropdownMenu,
   DropdownMenuContent,
@@ -46,13 +45,20 @@ export function Navbar({ onMenuClick, isSidebarOpen }: NavbarProps) {
               {/* Logo and Brand Name when sidebar is closed */}
               <div className="hidden lg:flex items-center gap-3 ml-2">
                 <div className="p-2 bg-gradient-to-br from-tricorn-800/50 to-navy-800/50 rounded-lg border border-sconce-500/30 shadow-lg">
-                  <Image 
+                  <img 
                     src="/image.png" 
                     alt="Paralegal Logo" 
-                    width={24}
-                    height={24}
-                    className="w-6 h-6"
+                    className="w-6 h-6 object-contain"
+                    onError={(e) => {
+                      // Fallback if image doesn't load
+                      e.currentTarget.style.display = 'none';
+                      e.currentTarget.nextElementSibling?.classList.remove('hidden');
+                    }}
                   />
+                  {/* Fallback icon if image fails to load */}
+                  <div className="hidden w-6 h-6 bg-gradient-to-br from-sconce-500 to-sconce-600 rounded flex items-center justify-center">
+                    <span className="text-white text-xs font-bold">P</span>
+                  </div>
                 </div>
                 <span className="text-xl font-bold text-sconce-100 legal-serif">
                   Paralegal
